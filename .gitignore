@@ -29,4 +29,12 @@ Thumbs.db
 *.mv.db
 *.trace.db
 data/
-backend/.localdb/
+# Services
+api-gateway/
+frontend/
+service-achievements/
+service-auth/
+service-clan/
+service-forum/
+service-learning/
+shared-lib/
