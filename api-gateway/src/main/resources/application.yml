@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: 
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: service-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+        - id: service-learning
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/learning/**
+        - id: service-achievements
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/achievements/**
+        - id: service-clan
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/clan/**
+        - id: service-forum
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/forum/**

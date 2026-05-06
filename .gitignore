@@ -1,0 +1,32 @@
+# Java / Gradle
+.gradle/
+build/
+bin/
+out/
+.idea/
+*.iml
+*.class
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+.eslintcache
+
+# Environment & Secrets
+.env*
+!.env.example
+
+# Secrets
+*.key
+*.pem
+*.googleusercontent.com.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# H2 Database files
+*.mv.db
+*.trace.db
+data/
+backend/.localdb/

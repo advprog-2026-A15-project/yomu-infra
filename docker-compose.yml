@@ -1,0 +1,98 @@
+services:
+  # ─── API Gateway ──────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - service-auth
+      - service-learning
+      - service-achievements
+      - service-forum
+      - service-clan
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  # ─── Auth Service ─────────────────────────────────────────────────
+  service-auth:
+    build:
+      context: ./service-auth
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_auth;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - auth-data:/data
+
+  # ─── Learning Service ────────────────────────────────────────────
+  service-learning:
+    build:
+      context: ./service-learning
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_learning;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - learning-data:/data
+
+  # ─── Achievements Service ────────────────────────────────────────
+  service-achievements:
+    build:
+      context: ./service-achievements
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_achievements;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - achievements-data:/data
+
+  # ─── Forum Service ───────────────────────────────────────────────
+  service-forum:
+    build:
+      context: ./service-forum
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_forum;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - forum-data:/data
+
+  # ─── Clan Service ────────────────────────────────────────────────
+  service-clan:
+    build:
+      context: ./service-clan
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_clan;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+    volumes:
+      - clan-data:/data
+
+volumes:
+  auth-data:
+  learning-data:
+  achievements-data:
+  forum-data:
+  clan-data:
