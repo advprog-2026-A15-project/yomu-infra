@@ -12,8 +12,8 @@ services:
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
@@ -30,8 +30,8 @@ services:
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
     build:
-      context: ./service-auth
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./service-auth/Dockerfile
     ports:
       - "8081:8081"
     environment:
@@ -46,8 +46,8 @@ services:
   # ─── Learning Service ────────────────────────────────────────────
   service-learning:
     build:
-      context: ./service-learning
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./service-learning/Dockerfile
     ports:
       - "8082:8082"
     environment:
@@ -62,8 +62,8 @@ services:
   # ─── Achievements Service ────────────────────────────────────────
   service-achievements:
     build:
-      context: ./service-achievements
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./service-achievements/Dockerfile
     ports:
       - "8083:8083"
     environment:
@@ -78,8 +78,8 @@ services:
   # ─── Forum Service ───────────────────────────────────────────────
   service-forum:
     build:
-      context: ./service-forum
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./service-forum/Dockerfile
     ports:
       - "8084:8084"
     environment:
@@ -94,8 +94,8 @@ services:
   # ─── Clan Service ────────────────────────────────────────────────
   service-clan:
     build:
-      context: ./service-clan
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./service-clan/Dockerfile
     ports:
       - "8085:8085"
     environment:

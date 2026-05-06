@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+.gradle
+build
+.localdb
+docs
+frontend
+node_modules
+*.log
+*.swp
+.env
+.env.local
