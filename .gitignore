@@ -39,3 +39,7 @@ service-clan/
 service-forum/
 service-learning/
 shared-lib
+
+.localdb/
+.vscode/
+.idea/
