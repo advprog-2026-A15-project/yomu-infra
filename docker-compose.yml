@@ -1,4 +1,14 @@
 services:
+  # ─── RabbitMQ ──────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
     build:
@@ -7,6 +17,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      - rabbitmq
       - service-auth
       - service-learning
       - service-achievements
@@ -14,6 +25,7 @@ services:
       - service-clan
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_RABBITMQ_HOST=rabbitmq
 
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
@@ -27,6 +39,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
     volumes:
       - auth-data:/data
 
@@ -42,6 +55,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
     volumes:
       - learning-data:/data
 
@@ -57,6 +71,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
     volumes:
       - achievements-data:/data
 
@@ -72,6 +87,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
     volumes:
       - forum-data:/data
 
@@ -87,6 +103,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
     volumes:
       - clan-data:/data
 

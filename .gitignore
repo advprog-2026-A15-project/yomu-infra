@@ -29,6 +29,7 @@ Thumbs.db
 *.mv.db
 *.trace.db
 data/
+
 # Services
 api-gateway/
 frontend/
@@ -37,4 +38,4 @@ service-auth/
 service-clan/
 service-forum/
 service-learning/
-shared-lib/
+shared-lib
