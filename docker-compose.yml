@@ -14,6 +14,8 @@ services:
     build:
       context: .
       dockerfile: ./api-gateway/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8080:8080"
     depends_on:
@@ -32,6 +34,8 @@ services:
     build:
       context: .
       dockerfile: ./service-auth/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8081:8081"
     environment:
@@ -48,6 +52,8 @@ services:
     build:
       context: .
       dockerfile: ./service-learning/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8082:8082"
     environment:
@@ -64,6 +70,8 @@ services:
     build:
       context: .
       dockerfile: ./service-achievements/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8083:8083"
     environment:
@@ -80,6 +88,8 @@ services:
     build:
       context: .
       dockerfile: ./service-forum/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8084:8084"
     environment:
@@ -96,6 +106,8 @@ services:
     build:
       context: .
       dockerfile: ./service-clan/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8085:8085"
     environment:
