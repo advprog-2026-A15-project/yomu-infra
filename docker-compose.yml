@@ -8,6 +8,92 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=yomu_auth
+      - POSTGRES_USER=yomu
+      - POSTGRES_PASSWORD=yomu
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomu -d yomu_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  learning-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=yomu_learning
+      - POSTGRES_USER=yomu
+      - POSTGRES_PASSWORD=yomu
+    ports:
+      - "5434:5432"
+    volumes:
+      - learning-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomu -d yomu_learning"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  achievements-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=yomu_achievements
+      - POSTGRES_USER=yomu
+      - POSTGRES_PASSWORD=yomu
+    ports:
+      - "5435:5432"
+    volumes:
+      - achievements-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomu -d yomu_achievements"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  forum-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=yomu_forum
+      - POSTGRES_USER=yomu
+      - POSTGRES_PASSWORD=yomu
+    ports:
+      - "5436:5432"
+    volumes:
+      - forum-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomu -d yomu_forum"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  clan-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=yomu_clan
+      - POSTGRES_USER=yomu
+      - POSTGRES_PASSWORD=yomu
+    ports:
+      - "5437:5432"
+    volumes:
+      - clan-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yomu -d yomu_clan"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
@@ -17,14 +103,20 @@ services:
       args:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
-      - "8080:8080"
+      - "8090:8090"
     depends_on:
-      - rabbitmq
-      - service-auth
-      - service-learning
-      - service-achievements
-      - service-forum
-      - service-clan
+      rabbitmq:
+        condition: service_healthy
+      service-auth:
+        condition: service_started
+      service-learning:
+        condition: service_started
+      service-achievements:
+        condition: service_started
+      service-forum:
+        condition: service_started
+      service-clan:
+        condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_RABBITMQ_HOST=rabbitmq
@@ -38,14 +130,17 @@ services:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8081:8081"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_auth;MODE=PostgreSQL;AUTO_SERVER=TRUE
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/yomu_auth
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_USERNAME=yomu
+      - SPRING_DATASOURCE_PASSWORD=yomu
       - SPRING_RABBITMQ_HOST=rabbitmq
-    volumes:
-      - auth-data:/data
 
   # ─── Learning Service ────────────────────────────────────────────
   service-learning:
@@ -56,14 +151,17 @@ services:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8082:8082"
+    depends_on:
+      learning-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_learning;MODE=PostgreSQL;AUTO_SERVER=TRUE
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://learning-db:5432/yomu_learning
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_USERNAME=yomu
+      - SPRING_DATASOURCE_PASSWORD=yomu
       - SPRING_RABBITMQ_HOST=rabbitmq
-    volumes:
-      - learning-data:/data
 
   # ─── Achievements Service ────────────────────────────────────────
   service-achievements:
@@ -74,14 +172,17 @@ services:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8083:8083"
+    depends_on:
+      achievements-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_achievements;MODE=PostgreSQL;AUTO_SERVER=TRUE
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://achievements-db:5432/yomu_achievements
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_USERNAME=yomu
+      - SPRING_DATASOURCE_PASSWORD=yomu
       - SPRING_RABBITMQ_HOST=rabbitmq
-    volumes:
-      - achievements-data:/data
 
   # ─── Forum Service ───────────────────────────────────────────────
   service-forum:
@@ -92,14 +193,17 @@ services:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8084:8084"
+    depends_on:
+      forum-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_forum;MODE=PostgreSQL;AUTO_SERVER=TRUE
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://forum-db:5432/yomu_forum
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_USERNAME=yomu
+      - SPRING_DATASOURCE_PASSWORD=yomu
       - SPRING_RABBITMQ_HOST=rabbitmq
-    volumes:
-      - forum-data:/data
 
   # ─── Clan Service ────────────────────────────────────────────────
   service-clan:
@@ -110,18 +214,21 @@ services:
         CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
     ports:
       - "8085:8085"
+    depends_on:
+      clan-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_clan;MODE=PostgreSQL;AUTO_SERVER=TRUE
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-      - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clan-db:5432/yomu_clan
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_USERNAME=yomu
+      - SPRING_DATASOURCE_PASSWORD=yomu
       - SPRING_RABBITMQ_HOST=rabbitmq
-    volumes:
-      - clan-data:/data
 
 volumes:
-  auth-data:
-  learning-data:
-  achievements-data:
-  forum-data:
-  clan-data:
+  auth-db-data:
+  learning-db-data:
+  achievements-db-data:
+  forum-db-data:
+  clan-db-data:

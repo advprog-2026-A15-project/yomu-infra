@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      - "clone-repositories.sh"
       - ".github/workflows/frontend-quality.yml"
   push:
     branches:
@@ -11,6 +12,7 @@ on:
       - staging
     paths:
       - "frontend/**"
+      - "clone-repositories.sh"
       - ".github/workflows/frontend-quality.yml"
   workflow_dispatch:
 
@@ -23,6 +25,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Clone frontend repository when running from infra repo
+        working-directory: .
+        run: |
+          chmod +x ./clone-repositories.sh
+          ./clone-repositories.sh
 
       - uses: actions/setup-node@v4
         with:
