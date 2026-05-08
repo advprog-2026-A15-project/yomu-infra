@@ -28,6 +28,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
+      - SPRING_MAIN_WEB_APPLICATION_TYPE=reactive
 
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
@@ -44,6 +47,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
     volumes:
       - auth-data:/data
 
@@ -62,6 +67,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
     volumes:
       - learning-data:/data
 
@@ -80,6 +87,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
     volumes:
       - achievements-data:/data
 
@@ -98,6 +107,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
     volumes:
       - forum-data:/data
 
@@ -116,6 +127,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
     volumes:
       - clan-data:/data
 
