@@ -657,7 +657,217 @@ Proses Risk Storming kami mengikuti tiga tahapan yang diajarkan dalam Module 09 
 **Tahap ketiga — Mitigation** — adalah tahap terpenting di mana tim secara kolaboratif merancang perubahan arsitektur untuk mengurangi atau menghilangkan risiko yang telah diidentifikasi. Sebagaimana dinyatakan dalam Module 09 (ref: hal. 104), mitigasi risiko biasanya melibatkan perubahan atau peningkatan pada area arsitektur yang sebelumnya dianggap sudah sempurna, dan perubahan ini biasanya menimbulkan biaya tambahan. Tim kami menerapkan prinsip ini dengan merancang mitigasi yang proporsional terhadap tingkat risiko: untuk risiko tertinggi (H2 Database, score 9), kami merencanakan migrasi ke PostgreSQL yang memerlukan effort medium namun menyelesaikan masalah data integrity secara fundamental; untuk risiko medium (RabbitMQ tanpa DLQ, non-idempotent handlers), kami merancang solusi dengan effort rendah seperti konfigurasi Dead Letter Queue dan penambahan event ID tracking. Pendekatan ini mencerminkan trade-off antara biaya mitigasi dan tingkat risiko, serupa dengan negosiasi antara arsitek dan stakeholder yang digambarkan dalam Module 09 (ref: hal. 105) — kami tidak mencoba menyelesaikan semua risiko sekaligus, tetapi memprioritaskan berdasarkan risk score dan feasibility implementasi.
 
 ---
+## 🧑‍💻 Individual Works — Component & Code Diagrams (C4 Level 3 & 4)
 
-*Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
+> **Component Diagram** (C4 Level 3) — Scope: satu container. Menunjukkan komponen-komponen di dalam container, tanggung jawab masing-masing, dan detail teknologi/implementasi. Semua komponen di dalam satu container berjalan dalam *satu process space* dan bukan unit yang di-deploy terpisah.
+>
+> **Code Diagram** (C4 Level 4) — Scope: satu komponen. Menunjukkan elemen kode (class, interface, entity) di dalam komponen tersebut menggunakan UML class diagram.
+>
+> *(Ref: Module 09, hal. 119-120)*
+
+---
+
+---
+
+### 👤 Tirta Rendy Siahaan — Achievement Service (Port 8083)
+
+#### Component Diagram — Achievement Service
+
+```mermaid
+flowchart TD
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]"]
+    DB[("🗄️ Achievements DB\n[Container: H2 / PostgreSQL]")]
+
+    subgraph ACHIEV["Achievement Service [Container: Spring Boot 3.x, Port 8083]"]
+        direction TB
+
+        AC["🎯 AchievementController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk CRUD achievement\ndan melihat progres"]
+
+        MC["📋 DailyMissionController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk daily mission,\nklaim reward"]
+
+        AS["⚙️ AchievementService\n[Component: Service]\n\nLogika bisnis: tracking\nprogres, trigger unlock,\ncek milestone"]
+
+        MS["⚙️ DailyMissionService\n[Component: Service]\n\nLogika bisnis: rotasi\nmisi harian, cek\npenyelesaian, klaim reward"]
+
+        AR["💾 AchievementRepository\n[Component: JPA Repository]\n\nAkses data Achievement\ndan UserAchievement"]
+
+        MR["💾 DailyMissionRepository\n[Component: JPA Repository]\n\nAkses data DailyMission\ndan UserMissionProgress"]
+
+        EL["👂 EventListener\n[Component: RabbitMQ Listener]\n\nMendengarkan event:\n- QuizCompletedEvent\n- ClanPromotedEvent\nuntuk trigger achievement"]
+
+        EP["📤 EventPublisher\n[Component: RabbitMQ Publisher]\n\nMempublish event:\n- AchievementUnlockedEvent\n- DailyMissionCompletedEvent"]
+    end
+
+    GW -->|"/api/achievements/**\n[HTTP]"| AC
+    GW -->|"/api/missions/**\n[HTTP]"| MC
+
+    AC --> AS
+    MC --> MS
+
+    AS --> AR
+    AS --> EP
+    MS --> MR
+    MS --> EP
+
+    EL -.->|"Subscribes\n[AMQP]"| MQ
+    EP -.->|"Publishes\n[AMQP]"| MQ
+    EL --> AS
+    EL --> MS
+
+    AR -->|"JDBC"| DB
+    MR -->|"JDBC"| DB
+
+    style AC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style MC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style AS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style MS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style AR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style MR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style EL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style EP fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+```
+
+#### Code Diagram 1 — Achievement Domain Model
+
+```mermaid
+classDiagram
+    class Achievement {
+        -Long id
+        -String name
+        -String description
+        -String iconUrl
+        -AchievementType type
+        -int milestone
+        -boolean active
+        +getId() Long
+        +getName() String
+        +getMilestone() int
+    }
+
+    class UserAchievement {
+        -Long id
+        -Long userId
+        -Achievement achievement
+        -int currentProgress
+        -boolean unlocked
+        -LocalDateTime unlockedAt
+        +isUnlocked() boolean
+        +incrementProgress(int amount) void
+        +unlock() void
+    }
+
+    class AchievementType {
+        <<enumeration>>
+        READING_COUNT
+        QUIZ_SCORE
+        CLAN_TIER
+        FORUM_ACTIVITY
+        DAILY_STREAK
+    }
+
+    Achievement "1" --> "0..*" UserAchievement : tracked by
+    Achievement --> AchievementType : categorized as
+```
+
+#### Code Diagram 2 — Daily Mission Domain Model
+
+```mermaid
+classDiagram
+    class DailyMission {
+        -Long id
+        -String title
+        -String description
+        -MissionType missionType
+        -int targetValue
+        -int rewardPoints
+        -LocalDate activeDate
+        -boolean active
+        +isActiveToday() boolean
+        +getTargetValue() int
+    }
+
+    class UserMissionProgress {
+        -Long id
+        -Long userId
+        -DailyMission mission
+        -int currentValue
+        -boolean completed
+        -boolean rewardClaimed
+        -LocalDate progressDate
+        +isCompleted() boolean
+        +incrementProgress(int amount) void
+        +claimReward() boolean
+    }
+
+    class MissionType {
+        <<enumeration>>
+        READ_ARTICLES
+        COMPLETE_QUIZZES
+        POST_COMMENTS
+        EARN_ACHIEVEMENT
+    }
+
+    class DailyMissionScheduler {
+        -DailyMissionRepository missionRepo
+        +rotateDaily() void
+        +deactivateExpired() void
+    }
+
+    DailyMission "1" --> "0..*" UserMissionProgress : tracked by
+    DailyMission --> MissionType : categorized as
+    DailyMissionScheduler --> DailyMission : manages
+```
+
+#### Code Diagram 3 — Achievement Event Listener
+
+```mermaid
+classDiagram
+    class AchievementEventListener {
+        -AchievementService achievementService
+        -DailyMissionService missionService
+        +handleQuizCompleted(QuizCompletedEvent event) void
+        +handleClanPromoted(ClanPromotedEvent event) void
+    }
+
+    class AchievementEventPublisher {
+        -RabbitTemplate rabbitTemplate
+        +publishAchievementUnlocked(AchievementUnlockedEvent event) void
+        +publishDailyMissionCompleted(DailyMissionCompletedEvent event) void
+    }
+
+    class QuizCompletedEvent {
+        -Long userId
+        -Long quizId
+        -int score
+        -int totalQuestions
+        -LocalDateTime completedAt
+    }
+
+    class AchievementUnlockedEvent {
+        -Long userId
+        -Long achievementId
+        -String achievementName
+        -LocalDateTime unlockedAt
+    }
+
+    class DailyMissionCompletedEvent {
+        -Long userId
+        -Long missionId
+        -int rewardPoints
+        -LocalDateTime completedAt
+    }
+
+    AchievementEventListener ..> QuizCompletedEvent : consumes
+    AchievementEventListener --> AchievementService : delegates to
+    AchievementEventPublisher ..> AchievementUnlockedEvent : publishes
+    AchievementEventPublisher ..> DailyMissionCompletedEvent : publishes
+```
+
+---
+
+---
+*Dibuat oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
 *Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
-
