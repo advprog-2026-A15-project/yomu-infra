@@ -188,12 +188,16 @@ Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
 
 Sistem menggunakan **JSON Web Token (JWT)**. Setiap request dari frontend ke backend (melalui Gateway) akan divalidasi keabsahan tokennya oleh `JwtAuthenticationFilter` yang berada di dalam `shared-lib` dan diimpor oleh setiap service secara terpisah untuk memvalidasi otorisasi.
 
+<<<<<<< HEAD
 ---
 
+=======
+>>>>>>> ee98d471c4fb05ca6872f0b03deba781e3b00acf
 ## MODULE 9 - GROUP DISCUSSION
+
 ## 🏗️ Arsitektur Sistem Saat Ini
 
-Yomu mengadopsi arsitektur **Microservices Polyrepo** dengan komunikasi sinkron (REST via API Gateway) dan asinkron (Event-Driven via RabbitMQ). Berikut visualisasi arsitektur menggunakan **C4 Model** (ref: Module 09 — *Visualizing Software Architecture*).
+Yomu mengadopsi arsitektur **Microservices Polyrepo** dengan komunikasi sinkron (REST via API Gateway) dan asinkron (Event-Driven via RabbitMQ). Berikut visualisasi arsitektur menggunakan **C4 Model** (ref: Module 09 — _Visualizing Software Architecture_).
 
 ---
 
@@ -204,9 +208,9 @@ Yomu mengadopsi arsitektur **Microservices Polyrepo** dengan komunikasi sinkron 
 > **Supporting elements**: Aktor (Pelajar, Admin) dan sistem eksternal (Google OAuth, RabbitMQ).
 > **Intended audience**: Semua orang, baik teknis maupun non-teknis.
 >
-> *(Ref: C4 Model — System Context Diagram, Module 09 hal. 115-116)*
+> _(Ref: C4 Model — System Context Diagram, Module 09 hal. 115-116)_
 
-Context Diagram menunjukkan **Yomu** sebagai satu kotak di tengah, dikelilingi oleh pengguna dan sistem eksternal yang berinteraksi dengannya. Detail teknis tidak penting di level ini — fokus pada *siapa* yang menggunakan sistem dan *apa* yang terhubung.
+Context Diagram menunjukkan **Yomu** sebagai satu kotak di tengah, dikelilingi oleh pengguna dan sistem eksternal yang berinteraksi dengannya. Detail teknis tidak penting di level ini — fokus pada _siapa_ yang menggunakan sistem dan _apa_ yang terhubung.
 
 ```mermaid
 flowchart TD
@@ -237,8 +241,8 @@ flowchart TD
 > **Supporting elements**: Aktor dan sistem eksternal yang terhubung.
 > **Intended audience**: Tim teknis — software architect, developer, ops.
 >
-> *(Ref: C4 Model — Container Diagram, Module 09 hal. 117-118)*
-> *Catatan: "Container" di C4 bukan Docker container, melainkan unit yang berjalan terpisah (aplikasi, database, message broker, dsb.)*
+> _(Ref: C4 Model — Container Diagram, Module 09 hal. 117-118)_
+> _Catatan: "Container" di C4 bukan Docker container, melainkan unit yang berjalan terpisah (aplikasi, database, message broker, dsb.)_
 
 ```mermaid
 flowchart TD
@@ -327,10 +331,11 @@ flowchart TD
 ```
 
 **Keterangan:**
+
 - **Garis solid (→)**: Komunikasi sinkron — REST over HTTP
 - **Garis putus-putus (-.->)**: Komunikasi asinkron — Event via RabbitMQ (AMQP), atau compile dependency
-- Setiap service memiliki **database H2 terpisah** sesuai prinsip *Database-per-Service*
-- **Shared Library** adalah *compile-time dependency*, bukan runtime service
+- Setiap service memiliki **database H2 terpisah** sesuai prinsip _Database-per-Service_
+- **Shared Library** adalah _compile-time dependency_, bukan runtime service
 
 ---
 
@@ -341,7 +346,7 @@ flowchart TD
 > **Supporting elements**: Infrastructure nodes (Docker network).
 > **Intended audience**: Tim teknis — architect, developer, ops.
 >
-> *(Ref: C4 Model — Deployment Diagram, Module 09 hal. 122)*
+> _(Ref: C4 Model — Deployment Diagram, Module 09 hal. 122)_
 
 ```mermaid
 flowchart TD
@@ -392,23 +397,24 @@ flowchart TD
 ```
 
 **Catatan Deployment:**
+
 - Semua service berjalan dalam **satu Docker Compose** pada satu host
 - Service backend **tidak di-expose** ke luar — hanya dapat diakses melalui API Gateway
 - H2 database berjalan **embedded** di dalam proses setiap service (bukan container terpisah)
 - Komunikasi antar container menggunakan **Docker internal network**
 
-
 ## 🔮 Arsitektur Masa Depan (Setelah Risk Storming)
 
 ### Skenario: Yomu Mengalami Kesuksesan Besar
 
-Bayangkan Yomu telah berhasil diluncurkan dan mendapat adopsi massal dari sekolah-sekolah dan institusi pendidikan di seluruh Indonesia. Jumlah pengguna melonjak dari ratusan menjadi **ratusan ribu pengguna aktif harian**. Pada kondisi ini, kami menganalisis risiko arsitektur saat ini menggunakan teknik **Risk Storming** (ref: Module 09, Chapter 8 — *Analysing Architectural Risk*).
+Bayangkan Yomu telah berhasil diluncurkan dan mendapat adopsi massal dari sekolah-sekolah dan institusi pendidikan di seluruh Indonesia. Jumlah pengguna melonjak dari ratusan menjadi **ratusan ribu pengguna aktif harian**. Pada kondisi ini, kami menganalisis risiko arsitektur saat ini menggunakan teknik **Risk Storming** (ref: Module 09, Chapter 8 — _Analysing Architectural Risk_).
 
 ---
 
 ### 📊 Risk Matrix
 
 Kami menggunakan **Architecture Risk Matrix** (ref: Module 09, Figure 20-1) dengan dua dimensi:
+
 - **Overall Impact of Risk**: Low (1), Medium (2), High (3)
 - **Likelihood of Risk Occurring**: Low (1), Medium (2), High (3)
 
@@ -430,32 +436,32 @@ Impact           ├──────────┼─────────
 
 ### 🌪️ Risk Storming — Tahap 1: Identification (Individual, Non-Collaborative)
 
-> *"Risk storming is a collaborative exercise used to determine architectural risk within a specific dimension."*
+> _"Risk storming is a collaborative exercise used to determine architectural risk within a specific dimension."_
 > — Module 09, hal. 99
 
 Setiap anggota tim secara **individual** (tanpa diskusi) menganalisis arsitektur saat ini dan menempatkan "Post-it notes" virtual berwarna di area arsitektur yang dianggap berisiko. Dimensi risiko yang dianalisis: **availability, scalability, data integrity, dan security**.
 
 Hasil identifikasi individual:
 
-| Area Arsitektur | Anggota | Dimensi | Impact | Likelihood | Risk Score | Level |
-|:---|:---|:---|:---:|:---:|:---:|:---:|
-| H2 Database (semua service) | Tirta | Data Integrity | 3 (High) | 3 (High) | **9** | 🔴 High |
-| H2 Database (semua service) | Adella | Availability | 3 (High) | 3 (High) | **9** | 🔴 High |
-| H2 Database (semua service) | Nathanael | Scalability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
-| API Gateway (single instance) | Yosua | Availability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
-| API Gateway (no circuit breaker) | Ali | Availability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
-| RabbitMQ (no DLQ) | Tirta | Data Integrity | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
-| RabbitMQ (no DLQ) | Yosua | Availability | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
-| Frontend-Backend CORS | Nathanael | Security | 2 (Medium) | 3 (High) | **6** | 🔴 High |
-| No Monitoring/Health Check | Ali | Availability | 2 (Medium) | 3 (High) | **6** | 🔴 High |
-| Non-idempotent Event Handlers | Adella | Data Integrity | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
-| Shared Library coupling | Nathanael | Scalability | 1 (Low) | 2 (Medium) | **2** | 🟢 Low |
+| Area Arsitektur                  | Anggota   | Dimensi        |   Impact   | Likelihood | Risk Score |   Level   |
+| :------------------------------- | :-------- | :------------- | :--------: | :--------: | :--------: | :-------: |
+| H2 Database (semua service)      | Tirta     | Data Integrity |  3 (High)  |  3 (High)  |   **9**    |  🔴 High  |
+| H2 Database (semua service)      | Adella    | Availability   |  3 (High)  |  3 (High)  |   **9**    |  🔴 High  |
+| H2 Database (semua service)      | Nathanael | Scalability    |  3 (High)  | 2 (Medium) |   **6**    |  🔴 High  |
+| API Gateway (single instance)    | Yosua     | Availability   |  3 (High)  | 2 (Medium) |   **6**    |  🔴 High  |
+| API Gateway (no circuit breaker) | Ali       | Availability   |  3 (High)  | 2 (Medium) |   **6**    |  🔴 High  |
+| RabbitMQ (no DLQ)                | Tirta     | Data Integrity | 2 (Medium) | 2 (Medium) |   **4**    | 🟡 Medium |
+| RabbitMQ (no DLQ)                | Yosua     | Availability   | 2 (Medium) | 2 (Medium) |   **4**    | 🟡 Medium |
+| Frontend-Backend CORS            | Nathanael | Security       | 2 (Medium) |  3 (High)  |   **6**    |  🔴 High  |
+| No Monitoring/Health Check       | Ali       | Availability   | 2 (Medium) |  3 (High)  |   **6**    |  🔴 High  |
+| Non-idempotent Event Handlers    | Adella    | Data Integrity | 2 (Medium) | 2 (Medium) |   **4**    | 🟡 Medium |
+| Shared Library coupling          | Nathanael | Scalability    |  1 (Low)   | 2 (Medium) |   **2**    |  🟢 Low   |
 
 ---
 
 ### 🤝 Risk Storming — Tahap 2: Consensus (Collaborative)
 
-> *"The goal of this activity is to analyze the risk areas as a team and gain consensus in terms of the risk qualification."*
+> _"The goal of this activity is to analyze the risk areas as a team and gain consensus in terms of the risk qualification."_
 > — Module 09, hal. 102
 
 Seluruh anggota tim berkumpul dan menempelkan "Post-it notes" mereka pada diagram arsitektur. Berikut hasil konsensus setelah diskusi:
@@ -464,7 +470,7 @@ Seluruh anggota tim berkumpul dan menempelkan "Post-it notes" mereka pada diagra
 Tiga anggota secara independen mengidentifikasi H2 sebagai area risiko tertinggi. H2 adalah database in-memory/embedded yang **kehilangan seluruh data saat restart**. Dalam skenario ratusan ribu pengguna, data achievement, progress belajar, dan histori clan yang hilang akan berdampak fatal. Semua anggota sepakat bahwa baik impact maupun likelihood sama-sama tinggi karena Docker container secara natural akan restart saat update atau scaling.
 
 **2. API Gateway (Single Point of Failure) — Konsensus: 🔴 HIGH RISK (6)**
-Dua anggota mengidentifikasi API Gateway sebagai risiko tinggi. Yosua menjelaskan bahwa jika API Gateway down, **seluruh sistem tidak dapat diakses** (impact = 3). Ali menambahkan bahwa tanpa circuit breaker, satu service yang lambat/down bisa menyebabkan *cascading failure* yang menjatuhkan gateway. Setelah diskusi, semua sepakat likelihood = 2 (medium) karena Spring Cloud Gateway cukup stabil, tapi impact-nya sangat tinggi.
+Dua anggota mengidentifikasi API Gateway sebagai risiko tinggi. Yosua menjelaskan bahwa jika API Gateway down, **seluruh sistem tidak dapat diakses** (impact = 3). Ali menambahkan bahwa tanpa circuit breaker, satu service yang lambat/down bisa menyebabkan _cascading failure_ yang menjatuhkan gateway. Setelah diskusi, semua sepakat likelihood = 2 (medium) karena Spring Cloud Gateway cukup stabil, tapi impact-nya sangat tinggi.
 
 **3. Frontend-Backend CORS — Konsensus: 🔴 HIGH RISK (6)**
 Nathanael mengidentifikasi masalah ini berdasarkan pengalaman langsung tim (terlihat dari chat bahwa frontend tidak bisa berkomunikasi dengan backend). Setelah diskusi, tim sepakat ini lebih merupakan masalah konfigurasi yang bisa diperbaiki di level gateway — bukan risiko arsitektural fundamental. Namun, **jika tidak ditangani dengan konfigurasi terpusat**, masalah ini akan terus berulang saat service baru ditambahkan.
@@ -485,19 +491,19 @@ Hanya satu anggota yang mengidentifikasi ini. Setelah diskusi, tim sepakat bahwa
 
 ### 🛠️ Risk Storming — Tahap 3: Mitigation (Collaborative)
 
-> *"Mitigating risk within an architecture usually involves changes or enhancements to certain areas that otherwise might have been deemed perfect."*
+> _"Mitigating risk within an architecture usually involves changes or enhancements to certain areas that otherwise might have been deemed perfect."_
 > — Module 09, hal. 104
 
 Berdasarkan konsensus, tim merancang mitigasi untuk setiap risiko:
 
-| Risk Area | Score | Mitigasi | Cost/Effort |
-|:---|:---:|:---|:---:|
-| H2 Database | 9 🔴 | **Migrasi ke PostgreSQL** — satu instance PostgreSQL per service, berjalan sebagai Docker container terpisah. H2 sudah berjalan dalam PostgreSQL compatibility mode sehingga migrasi relatif smooth. | Medium |
-| API Gateway SPOF | 6 🔴 | **Tambah Circuit Breaker (Resilience4j)** di gateway level. Jika sebuah service tidak merespons dalam batas waktu, circuit breaker membuka sirkuit dan mengembalikan fallback response. | Low |
-| CORS Issue | 6 🔴 | **Pusatkan konfigurasi CORS di API Gateway**. Semua allowed origins, methods, headers dikonfigurasi di satu tempat (gateway), bukan tersebar di setiap service. | Low |
-| No Monitoring | 6 🔴 | **Tambah Spring Actuator + Prometheus + Grafana**. Setiap service mengekspos `/actuator/health` dan `/actuator/prometheus`. Prometheus meng-scrape metrics, Grafana memvisualisasikan dan mengirim alert. | Medium |
-| RabbitMQ no DLQ | 4 🟡 | **Tambah Dead Letter Queue + Retry Policy**. Event yang gagal diproses masuk DLQ untuk di-inspect dan di-retry (otomatis atau manual). | Low |
-| Non-idempotent Handlers | 4 🟡 | **Implementasi idempotent consumers**. Setiap event diberi unique ID; consumer menyimpan log event ID yang sudah diproses untuk mencegah double processing. | Low |
+| Risk Area               | Score | Mitigasi                                                                                                                                                                                                  | Cost/Effort |
+| :---------------------- | :---: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------: |
+| H2 Database             | 9 🔴  | **Migrasi ke PostgreSQL** — satu instance PostgreSQL per service, berjalan sebagai Docker container terpisah. H2 sudah berjalan dalam PostgreSQL compatibility mode sehingga migrasi relatif smooth.      |   Medium    |
+| API Gateway SPOF        | 6 🔴  | **Tambah Circuit Breaker (Resilience4j)** di gateway level. Jika sebuah service tidak merespons dalam batas waktu, circuit breaker membuka sirkuit dan mengembalikan fallback response.                   |     Low     |
+| CORS Issue              | 6 🔴  | **Pusatkan konfigurasi CORS di API Gateway**. Semua allowed origins, methods, headers dikonfigurasi di satu tempat (gateway), bukan tersebar di setiap service.                                           |     Low     |
+| No Monitoring           | 6 🔴  | **Tambah Spring Actuator + Prometheus + Grafana**. Setiap service mengekspos `/actuator/health` dan `/actuator/prometheus`. Prometheus meng-scrape metrics, Grafana memvisualisasikan dan mengirim alert. |   Medium    |
+| RabbitMQ no DLQ         | 4 🟡  | **Tambah Dead Letter Queue + Retry Policy**. Event yang gagal diproses masuk DLQ untuk di-inspect dan di-retry (otomatis atau manual).                                                                    |     Low     |
+| Non-idempotent Handlers | 4 🟡  | **Implementasi idempotent consumers**. Setiap event diberi unique ID; consumer menyimpan log event ID yang sudah diproses untuk mencegah double processing.                                               |     Low     |
 
 ---
 
@@ -633,14 +639,13 @@ flowchart TD
 
 **Ringkasan Perubahan Arsitektur:**
 
-| Komponen | Sebelum (Current) | Sesudah (Future) | Risk Score |
-|:---|:---|:---|:---:|
-| Database | H2 In-Memory (embedded) | PostgreSQL (dedicated container) | 9 → 2 |
-| API Gateway | Routing + JWT saja | + Circuit Breaker + CORS + Rate Limiting | 6 → 2 |
-| Monitoring | Tidak ada | Prometheus + Grafana + Actuator | 6 → 1 |
-| Message Queue | RabbitMQ basic | + Dead Letter Queue + Retry Policy | 4 → 1 |
-| Event Handling | Basic pub/sub | Idempotent consumers + event dedup | 4 → 1 |
-
+| Komponen       | Sebelum (Current)       | Sesudah (Future)                         | Risk Score |
+| :------------- | :---------------------- | :--------------------------------------- | :--------: |
+| Database       | H2 In-Memory (embedded) | PostgreSQL (dedicated container)         |   9 → 2    |
+| API Gateway    | Routing + JWT saja      | + Circuit Breaker + CORS + Rate Limiting |   6 → 2    |
+| Monitoring     | Tidak ada               | Prometheus + Grafana + Actuator          |   6 → 1    |
+| Message Queue  | RabbitMQ basic          | + Dead Letter Queue + Retry Policy       |   4 → 1    |
+| Event Handling | Basic pub/sub           | Idempotent consumers + event dedup       |   4 → 1    |
 
 ## 📝 Penjelasan Risk Storming & Justifikasi Modifikasi Arsitektur
 
@@ -657,220 +662,510 @@ Proses Risk Storming kami mengikuti tiga tahapan yang diajarkan dalam Module 09 
 **Tahap ketiga — Mitigation** — adalah tahap terpenting di mana tim secara kolaboratif merancang perubahan arsitektur untuk mengurangi atau menghilangkan risiko yang telah diidentifikasi. Sebagaimana dinyatakan dalam Module 09 (ref: hal. 104), mitigasi risiko biasanya melibatkan perubahan atau peningkatan pada area arsitektur yang sebelumnya dianggap sudah sempurna, dan perubahan ini biasanya menimbulkan biaya tambahan. Tim kami menerapkan prinsip ini dengan merancang mitigasi yang proporsional terhadap tingkat risiko: untuk risiko tertinggi (H2 Database, score 9), kami merencanakan migrasi ke PostgreSQL yang memerlukan effort medium namun menyelesaikan masalah data integrity secara fundamental; untuk risiko medium (RabbitMQ tanpa DLQ, non-idempotent handlers), kami merancang solusi dengan effort rendah seperti konfigurasi Dead Letter Queue dan penambahan event ID tracking. Pendekatan ini mencerminkan trade-off antara biaya mitigasi dan tingkat risiko, serupa dengan negosiasi antara arsitek dan stakeholder yang digambarkan dalam Module 09 (ref: hal. 105) — kami tidak mencoba menyelesaikan semua risiko sekaligus, tetapi memprioritaskan berdasarkan risk score dan feasibility implementasi.
 
 ---
-## 🧑‍💻 Individual Works — Component & Code Diagrams (C4 Level 3 & 4)
 
-> **Component Diagram** (C4 Level 3) — Scope: satu container. Menunjukkan komponen-komponen di dalam container, tanggung jawab masing-masing, dan detail teknologi/implementasi. Semua komponen di dalam satu container berjalan dalam *satu process space* dan bukan unit yang di-deploy terpisah.
+## 🧑‍💻 Individual Work — Tirta Rendy Siahaan (Achievement Service)
+
+> **Component Diagram** (C4 Level 3) — Scope: Achievement Service container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
 >
-> **Code Diagram** (C4 Level 4) — Scope: satu komponen. Menunjukkan elemen kode (class, interface, entity) di dalam komponen tersebut menggunakan UML class diagram.
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing komponen. Menunjukkan class, interface, record, dan enum yang membentuk komponen tersebut.
 >
-> *(Ref: Module 09, hal. 119-120)*
+> _(Ref: Module 09, hal. 119-120)_
 
 ---
 
----
-
-### 👤 Tirta Rendy Siahaan — Achievement Service (Port 8083)
-
-#### Component Diagram — Achievement Service
+### 📐 Component Diagram — Achievement Service (Port 8083)
 
 ```mermaid
 flowchart TD
-    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]"]
-    MQ["📨 RabbitMQ\n[Container: Message Broker]"]
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
     DB[("🗄️ Achievements DB\n[Container: H2 / PostgreSQL]")]
+    SHARED["📦 Shared Library\n[Library]\nEvent POJOs, JWT Filter"]
 
     subgraph ACHIEV["Achievement Service [Container: Spring Boot 3.x, Port 8083]"]
         direction TB
 
-        AC["🎯 AchievementController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk CRUD achievement\ndan melihat progres"]
+        CTRL["🎯 AchievementController\n[Component: Spring REST Controller]\n\nSingle controller yang meng-handle\nsemua endpoint achievement &\ndaily mission.\nPath: /api/achievements/**"]
 
-        MC["📋 DailyMissionController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk daily mission,\nklaim reward"]
+        SVC_IF["⚙️ AchievementService\n[Component: Interface]\n\nKontrak bisnis: CRUD achievement,\nCRUD daily mission, record events,\nclaim reward, pin achievement,\nrotate daily missions"]
 
-        AS["⚙️ AchievementService\n[Component: Service]\n\nLogika bisnis: tracking\nprogres, trigger unlock,\ncek milestone"]
+        SVC_IMPL["⚙️ AchievementServiceImpl\n[Component: Service Implementation]\n\nImplementasi logika bisnis.\nMengelola progress tracking,\nidempotent event processing,\ndan publishing events ke RabbitMQ"]
 
-        MS["⚙️ DailyMissionService\n[Component: Service]\n\nLogika bisnis: rotasi\nmisi harian, cek\npenyelesaian, klaim reward"]
+        LISTENER["👂 ReadingCompletedListener\n[Component: RabbitMQ Listener]\n\nMendengarkan 5 event:\n- yomu.learning.completed\n- yomu.quiz.completed\n- yomu.league.activity\n- yomu.comment.created\n- yomu.clan.promoted"]
 
-        AR["💾 AchievementRepository\n[Component: JPA Repository]\n\nAkses data Achievement\ndan UserAchievement"]
+        REPO_IF["💾 AchievementRepository\n[Component: Repository Interface]\n\nKontrak akses data untuk\nachievements, daily missions,\nprogress tracking, dan\nactivity events"]
 
-        MR["💾 DailyMissionRepository\n[Component: JPA Repository]\n\nAkses data DailyMission\ndan UserMissionProgress"]
+        REPO_IMPL["💾 JdbcAchievementRepository\n[Component: JDBC Repository Implementation]\n\nImplementasi repository dengan\nJdbcTemplate. Mengelola 5 tabel:\nachievements, user_achievement_progress,\ndaily_missions, user_daily_mission_progress,\nachievement_activity_events"]
 
-        EL["👂 EventListener\n[Component: RabbitMQ Listener]\n\nMendengarkan event:\n- QuizCompletedEvent\n- ClanPromotedEvent\nuntuk trigger achievement"]
+        SCHEDULER["⏰ DailyMissionRotationScheduler\n[Component: Scheduled Task]\n\nRotasi daily mission otomatis\nsetiap tengah malam UTC.\nJuga berjalan saat startup."]
 
-        EP["📤 EventPublisher\n[Component: RabbitMQ Publisher]\n\nMempublish event:\n- AchievementUnlockedEvent\n- DailyMissionCompletedEvent"]
+        SEC["🔒 AchievementsSecurityConfig\n[Component: Security Configuration]\n\nKonfigurasi Spring Security:\nendpoint admin memerlukan ROLE_ADMIN,\nsemua request lain harus authenticated.\nMenggunakan JwtAuthenticationFilter\ndari shared-lib."]
     end
 
-    GW -->|"/api/achievements/**\n[HTTP]"| AC
-    GW -->|"/api/missions/**\n[HTTP]"| MC
+    %% External → Controller
+    GW -->|"HTTP requests\n/api/achievements/**"| CTRL
 
-    AC --> AS
-    MC --> MS
+    %% Controller → Service
+    CTRL --> SVC_IF
 
-    AS --> AR
-    AS --> EP
-    MS --> MR
-    MS --> EP
+    %% Interface → Implementation
+    SVC_IF -.->|"implements"| SVC_IMPL
 
-    EL -.->|"Subscribes\n[AMQP]"| MQ
-    EP -.->|"Publishes\n[AMQP]"| MQ
-    EL --> AS
-    EL --> MS
+    %% Listener → Service
+    LISTENER --> SVC_IF
 
-    AR -->|"JDBC"| DB
-    MR -->|"JDBC"| DB
+    %% Scheduler → Service
+    SCHEDULER --> SVC_IF
 
-    style AC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style AS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style AR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style EL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style EP fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    %% Service → Repository
+    SVC_IMPL --> REPO_IF
+
+    %% Service → RabbitMQ (publish)
+    SVC_IMPL -.->|"Publishes via RabbitTemplate:\nyomu.achievement.unlocked\nyomu.daily.mission.completed\n[AMQP]"| MQ
+
+    %% Repository Interface → Implementation
+    REPO_IF -.->|"implements"| REPO_IMPL
+
+    %% Repository → Database
+    REPO_IMPL -->|"JdbcTemplate\n[JDBC]"| DB
+
+    %% Listener ← RabbitMQ (subscribe)
+    MQ -.->|"Subscribes:\n5 queues via\n@RabbitListener\n[AMQP]"| LISTENER
+
+    %% Shared lib
+    SHARED -.->|"JwtAuthenticationFilter\nEvent POJOs"| SEC
+    SHARED -.->|"Event record types"| LISTENER
+
+    %% Styling
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style LISTENER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SCHEDULER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
     style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
     style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
 ```
 
-#### Code Diagram 1 — Achievement Domain Model
+---
+
+### 📐 Code Diagram 1 — Domain Model (Records & Enum)
+
+Menunjukkan elemen kode di dalam komponen model: semua menggunakan Java `record` (immutable data class) dan satu `enum`.
 
 ```mermaid
 classDiagram
     class Achievement {
-        -Long id
-        -String name
-        -String description
-        -String iconUrl
-        -AchievementType type
-        -int milestone
-        -boolean active
-        +getId() Long
-        +getName() String
-        +getMilestone() int
+        <<record>>
+        UUID id
+        String code
+        String name
+        String description
+        AchievementMetric metric
+        int milestone
+        boolean active
+        Instant createdAt
     }
 
-    class UserAchievement {
-        -Long id
-        -Long userId
-        -Achievement achievement
-        -int currentProgress
-        -boolean unlocked
-        -LocalDateTime unlockedAt
-        +isUnlocked() boolean
-        +incrementProgress(int amount) void
-        +unlock() void
-    }
-
-    class AchievementType {
+    class AchievementMetric {
         <<enumeration>>
-        READING_COUNT
-        QUIZ_SCORE
-        CLAN_TIER
-        FORUM_ACTIVITY
-        DAILY_STREAK
+        READING_COMPLETED
+        QUIZ_COMPLETED
+        LEAGUE_ACTIVITY
+        COMMENT_CREATED
+        CLAN_PROMOTED
+        CLAN_REACHED_DIAMOND
     }
 
-    Achievement "1" --> "0..*" UserAchievement : tracked by
-    Achievement --> AchievementType : categorized as
-```
+    class AchievementProgress {
+        <<record>>
+        Achievement achievement
+        int progressCount
+        Instant unlockedAt
+        boolean isPinned
+        +unlocked() boolean
+    }
 
-#### Code Diagram 2 — Daily Mission Domain Model
+    class AchievementProgressState {
+        <<record>>
+        int progressCount
+        Instant unlockedAt
+        boolean isPinned
+    }
 
-```mermaid
-classDiagram
     class DailyMission {
-        -Long id
-        -String title
-        -String description
-        -MissionType missionType
-        -int targetValue
-        -int rewardPoints
-        -LocalDate activeDate
-        -boolean active
-        +isActiveToday() boolean
-        +getTargetValue() int
+        <<record>>
+        UUID id
+        String code
+        String name
+        String description
+        AchievementMetric metric
+        int targetCount
+        int rewardPoints
+        LocalDate activeFrom
+        LocalDate activeUntil
+        Instant createdAt
     }
 
-    class UserMissionProgress {
-        -Long id
-        -Long userId
-        -DailyMission mission
-        -int currentValue
-        -boolean completed
-        -boolean rewardClaimed
-        -LocalDate progressDate
-        +isCompleted() boolean
-        +incrementProgress(int amount) void
-        +claimReward() boolean
+    class DailyMissionProgress {
+        <<record>>
+        DailyMission mission
+        int progressCount
+        Instant claimedAt
+        +completed() boolean
+        +claimed() boolean
     }
 
-    class MissionType {
-        <<enumeration>>
-        READ_ARTICLES
-        COMPLETE_QUIZZES
-        POST_COMMENTS
-        EARN_ACHIEVEMENT
+    class DailyMissionProgressState {
+        <<record>>
+        int progressCount
+        Instant claimedAt
     }
 
-    class DailyMissionScheduler {
-        -DailyMissionRepository missionRepo
-        +rotateDaily() void
-        +deactivateExpired() void
-    }
-
-    DailyMission "1" --> "0..*" UserMissionProgress : tracked by
-    DailyMission --> MissionType : categorized as
-    DailyMissionScheduler --> DailyMission : manages
+    Achievement --> AchievementMetric : metric
+    AchievementProgress --> Achievement : achievement
+    DailyMission --> AchievementMetric : metric
+    DailyMissionProgress --> DailyMission : mission
 ```
 
-#### Code Diagram 3 — Achievement Event Listener
+---
+
+### 📐 Code Diagram 2 — Service Layer (Interface + Implementation)
+
+Menunjukkan kontrak `AchievementService` dan implementasinya `AchievementServiceImpl`, beserta dependency-nya.
 
 ```mermaid
 classDiagram
-    class AchievementEventListener {
-        -AchievementService achievementService
-        -DailyMissionService missionService
-        +handleQuizCompleted(QuizCompletedEvent event) void
-        +handleClanPromoted(ClanPromotedEvent event) void
+    class AchievementService {
+        <<interface>>
+        +createAchievement(CreateAchievementRequest) AchievementResponse
+        +listAchievementProgress(UUID userId) List~AchievementProgressResponse~
+        +createDailyMission(CreateDailyMissionRequest) DailyMissionResponse
+        +listActiveDailyMissions(UUID userId) List~DailyMissionProgressResponse~
+        +claimDailyMissionReward(UUID missionId, UUID userId) ClaimRewardResponse
+        +pinAchievement(UUID userId, UUID achievementId, boolean pin) void
+        +recordReadingCompleted(LearningCompletedEvent) void
+        +recordQuizCompleted(QuizCompletedEvent) void
+        +recordLeagueActivity(LeagueActivityEvent) void
+        +recordCommentCreated(CommentCreatedEvent) void
+        +recordClanPromoted(ClanPromotedEvent) void
+        +rotateDailyMissions() void
     }
 
-    class AchievementEventPublisher {
+    class AchievementServiceImpl {
+        -AchievementRepository repository
         -RabbitTemplate rabbitTemplate
-        +publishAchievementUnlocked(AchievementUnlockedEvent event) void
-        +publishDailyMissionCompleted(DailyMissionCompletedEvent event) void
+        -int DEFAULT_DAILY_MISSION_REWARD = 10
+        +createAchievement(CreateAchievementRequest) AchievementResponse
+        +listAchievementProgress(UUID) List~AchievementProgressResponse~
+        +createDailyMission(CreateDailyMissionRequest) DailyMissionResponse
+        +listActiveDailyMissions(UUID) List~DailyMissionProgressResponse~
+        +claimDailyMissionReward(UUID, UUID) ClaimRewardResponse
+        +pinAchievement(UUID, UUID, boolean) void
+        +recordReadingCompleted(LearningCompletedEvent) void
+        +recordQuizCompleted(QuizCompletedEvent) void
+        +recordLeagueActivity(LeagueActivityEvent) void
+        +recordCommentCreated(CommentCreatedEvent) void
+        +recordClanPromoted(ClanPromotedEvent) void
+        +rotateDailyMissions() void
+        -updateAchievementAndMissionProgress(UUID userId, AchievementMetric metric) void
+        -resolveCode(String providedCode, String fallbackName) String
+        -requireMetric(AchievementMetric) AchievementMetric
+        -toResponse(Achievement) AchievementResponse
+        -toProgressResponse(AchievementProgress) AchievementProgressResponse
+        -toMissionResponse(DailyMission) DailyMissionResponse
+        -toMissionProgressResponse(DailyMissionProgress) DailyMissionProgressResponse
+    }
+
+    class AchievementRepository {
+        <<interface>>
+        +saveAchievement(Achievement) Achievement
+        +existsByAchievementCode(String) boolean
+        +findActiveAchievementsByMetric(AchievementMetric) List~Achievement~
+        +findAchievementProgressForUser(UUID) List~AchievementProgress~
+        +findAchievementProgressState(UUID, UUID) Optional~AchievementProgressState~
+        +saveAchievementProgress(UUID, UUID, int, Instant) void
+        +pinAchievement(UUID, UUID, boolean) void
+        +saveDailyMission(DailyMission) DailyMission
+        +existsByDailyMissionCode(String) boolean
+        +findDailyMissionById(UUID) Optional~DailyMission~
+        +findActiveDailyMissionsByMetric(AchievementMetric, LocalDate) List~DailyMission~
+        +findActiveDailyMissionProgressForUser(UUID, LocalDate) List~DailyMissionProgress~
+        +hasActiveDailyMissionOn(LocalDate) boolean
+        +findDailyMissionProgressState(UUID, UUID) Optional~DailyMissionProgressState~
+        +saveDailyMissionProgress(UUID, UUID, int, Instant) void
+        +saveActivityEvent(UUID, AchievementMetric, String, Instant) boolean
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    AchievementService <|.. AchievementServiceImpl : implements
+    AchievementServiceImpl --> AchievementRepository : repository
+    AchievementServiceImpl --> RabbitTemplate : rabbitTemplate
+```
+
+---
+
+### 📐 Code Diagram 3 — Event Listener, Scheduler & Shared Events
+
+Menunjukkan `ReadingCompletedListener` yang mengkonsumsi event dari service lain, `DailyMissionRotationScheduler` yang menjalankan rotasi otomatis, serta event objects dari shared-lib.
+
+```mermaid
+classDiagram
+    class ReadingCompletedListener {
+        -AchievementService achievementService
+        +onLearningCompleted(LearningCompletedEvent) void
+        +onQuizCompleted(QuizCompletedEvent) void
+        +onLeagueActivity(LeagueActivityEvent) void
+        +onCommentCreated(CommentCreatedEvent) void
+        +onClanPromoted(ClanPromotedEvent) void
+    }
+    note for ReadingCompletedListener "Setiap method di-annotasi dengan\n@RabbitListener yang bind ke\nqueue dan routing key masing-masing\npada exchange yomu.events (topic)"
+
+    class DailyMissionRotationScheduler {
+        -AchievementService achievementService
+        +ensureDailyMissionOnStartup() void
+        +rotateDailyMissionAtMidnight() void
+    }
+    note for DailyMissionRotationScheduler "@EventListener(ApplicationReadyEvent)\n@Scheduled(cron='0 0 0 * * *', zone='UTC')"
+
+    class LearningCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID bacaanId
+        Instant occurredAt
     }
 
     class QuizCompletedEvent {
-        -Long userId
-        -Long quizId
-        -int score
-        -int totalQuestions
-        -LocalDateTime completedAt
+        <<record / shared-lib>>
+        UUID userId
+        UUID quizId
+        Instant occurredAt
+    }
+
+    class LeagueActivityEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID activityId
+        Instant occurredAt
+    }
+
+    class CommentCreatedEvent {
+        <<record / shared-lib>>
+        String userId
+        String commentId
+        Instant timestamp
+    }
+
+    class ClanPromotedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID clanId
+        UUID seasonId
+        String newTier
+        Instant occurredAt
     }
 
     class AchievementUnlockedEvent {
-        -Long userId
-        -Long achievementId
-        -String achievementName
-        -LocalDateTime unlockedAt
+        <<record / shared-lib>>
+        UUID userId
+        String achievementCode
+        String achievementName
+        Instant unlockedAt
     }
 
     class DailyMissionCompletedEvent {
-        -Long userId
-        -Long missionId
-        -int rewardPoints
-        -LocalDateTime completedAt
+        <<record / shared-lib>>
+        UUID userId
+        UUID missionId
+        String missionName
+        Instant completedAt
     }
 
-    AchievementEventListener ..> QuizCompletedEvent : consumes
-    AchievementEventListener --> AchievementService : delegates to
-    AchievementEventPublisher ..> AchievementUnlockedEvent : publishes
-    AchievementEventPublisher ..> DailyMissionCompletedEvent : publishes
+    ReadingCompletedListener ..> LearningCompletedEvent : consumes
+    ReadingCompletedListener ..> QuizCompletedEvent : consumes
+    ReadingCompletedListener ..> LeagueActivityEvent : consumes
+    ReadingCompletedListener ..> CommentCreatedEvent : consumes
+    ReadingCompletedListener ..> ClanPromotedEvent : consumes
+    ReadingCompletedListener --> AchievementService : delegates to
+
+    DailyMissionRotationScheduler --> AchievementService : delegates to
+
+    AchievementServiceImpl ..> AchievementUnlockedEvent : publishes
+    AchievementServiceImpl ..> DailyMissionCompletedEvent : publishes
+```
+
+## 🧑‍💻 Individual Work — Nathanael Leander Herdanatra (Forum Service)
+
+> **Component Diagram** (C4 Level 3) — Scope: Forum Service container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
+>
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing komponen. Menunjukkan class, interface, record, dan entity yang membentuk komponen tersebut.
+>
+> _(Ref: Module 09, hal. 119-120)_
+
+---
+
+### 📐 Component Diagram — Forum Service (Port 8084)
+
+```mermaid
+flowchart TD
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
+    DB[("🗄️ Forum DB\n[Container: H2 / PostgreSQL]")]
+    SHARED["📦 Shared Library\n[Library]\nEvent POJOs, JWT Filter"]
+
+    subgraph FORUM["Forum Service [Container: Spring Boot 3.x, Port 8084]"]
+        direction TB
+
+        CTRL["🎯 CommentController\n[Component: Spring REST Controller]\n\nSingle controller yang menangani\nsemua endpoint forum comment.\nPath: /api/forum/comments/**"]
+
+        SVC_IF["⚙️ CommentService\n[Component: Interface]\n\nKontrak bisnis: create, update,\ndelete, reaction, list komentar,\ndan comment tree"]
+
+        SVC_IMPL["⚙️ CommentServiceImpl\n[Component: Service Implementation]\n\nImplementasi logika bisnis.\nMengelola threading komentar,\nsanitasi input, otorisasi author/admin,\ndan publishing event ke RabbitMQ"]
+
+        REPO_IF["💾 CommentRepository\n[Component: Repository Interface]\n\nKontrak akses data untuk\ncomments dan reactions"]
+
+        REPO_IMPL["💾 JdbcCommentRepository\n[Component: JDBC Repository Implementation]\n\nImplementasi repository dengan JdbcTemplate.\nMengelola tabel comments dan comment_reactions"]
+
+        MODEL["🧱 Comment\n[Component: Entity]\n\nSelf-referencing entity dengan\nparent_comment, content, counters,\ndan timestamp"]
+
+        SEC["🔒 ForumSecurityConfig\n[Component: Security Configuration]\n\nKonfigurasi Spring Security:\nGET publik, POST/PUT/DELETE perlu autentikasi,\nJWT filter dari shared-lib"]
+    end
+
+    %% External → Controller
+    GW -->|"HTTP requests\n/api/forum/comments/**"| CTRL
+
+    %% Controller → Service
+    CTRL --> SVC_IF
+
+    %% Interface → Implementation
+    SVC_IF -.->|"implements"| SVC_IMPL
+
+    %% Security
+    SHARED -.->|"JwtAuthenticationFilter"| SEC
+    SEC -.->|"protects"| CTRL
+
+    %% Service → Repository
+    SVC_IMPL --> REPO_IF
+
+    %% Repository Interface → Implementation
+    REPO_IF -.->|"implements"| REPO_IMPL
+
+    %% Repository → Entity
+    REPO_IMPL --> MODEL
+
+    %% Repository → Database
+    REPO_IMPL -->|"JdbcTemplate\n[JDBC]"| DB
+
+    %% Service → RabbitMQ (publish)
+    SVC_IMPL -.->|"Publishes via RabbitTemplate:\nyomu.comment.created\nyomu.comment.updated\nyomu.comment.deleted\n[AMQP]"| MQ
+
+    %% Shared lib
+    SHARED -.->|"CommentCreatedEvent\nCommentUpdatedEvent\nCommentDeletedEvent"| CTRL
+    SHARED -.->|"Event POJOs"| SVC_IMPL
+
+    %% Styling
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style MODEL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
+    style DB fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
 ```
 
 ---
 
----
-*Dibuat oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
-*Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
+### 📐 Code Diagram 1 — Domain Model & DTOs
+
+Menunjukkan model data forum yang dipakai untuk komentar bersarang, reaction, dan response API.
+
+```mermaid
+classDiagram
+    class Comment {
+        <<entity>>
+        String id
+        String userId
+        String bacaanId
+        String parentComment
+        String content
+        LocalDateTime createdAt
+        int upvotes
+        int downvotes
+        int reactionThumbsUp
+        int reactionHeart
+        int reactionLaugh
+        int reactionSurprise
+        int reactionSad
+    }
+
+    class CreateCommentRequest {
+        <<record>>
+        String userId
+        String bacaanId
+        String commentContent
+        String parentComment
+    }
+
+    class UpdateCommentRequest {
+        <<record>>
+        String commentContent
+    }
+
+    class ReactionRequest {
+        <<record>>
+        String reactionType
+    }
+
+    class CommentResponse {
+        <<record>>
+        String id
+        String userId
+        String bacaanId
+        String parentComment
+        String content
+        Instant createdAt
+        int upvotes
+        int downvotes
+        int thumbsUp
+        int heart
+        int laugh
+        int surprise
+        int sad
+    }
+
+    class CommentTreeResponse {
+        <<record>>
+        String id
+        String userId
+        String bacaanId
+        String parentComment
+        String content
+        Instant createdAt
+        int upvotes
+        int downvotes
+        int thumbsUp
+        int heart
+        int laugh
+        int surprise
+        int sad
+        List~CommentTreeResponse~ replies
+    }
+
+    CommentResponse --> Comment : maps from
+    CommentTreeResponse --> Comment : maps from
+    CommentTreeResponse --> CommentTreeResponse : replies
+```
 
 ---
 
@@ -1059,5 +1354,138 @@ classDiagram
 Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal *Auth Service* tidak akan merusak integritas komponen lain yang mengonsumsinya.
 
 ---
-*Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
-*Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
+
+### 📐 Code Diagram 2 — Service Layer (Forum Service)
+
+Menunjukkan kontrak `CommentService` dan implementasinya `CommentServiceImpl`, beserta dependency utamanya.
+
+```mermaid
+classDiagram
+    class CommentService {
+        <<interface>>
+        +createComment(String userId, String bacaanId, String commentContent) CommentCreatedEvent
+        +createComment(String userId, String bacaanId, String commentContent, String parentComment) CommentCreatedEvent
+        +updateComment(String commentId, String commentContent) CommentUpdatedEvent
+        +updateComment(String commentId, String commentContent, String userId, String role) CommentUpdatedEvent
+        +deleteComment(String commentId) CommentDeletedEvent
+        +deleteComment(String commentId, String userId, String role) CommentDeletedEvent
+        +addReaction(String commentId, String userId, String reactionType) void
+        +listComments(String bacaanId) List~CommentResponse~
+        +listCommentsTree(String bacaanId) List~CommentTreeResponse~
+        +getComment(String commentId) CommentResponse
+    }
+
+    class CommentServiceImpl {
+        -CommentRepository commentRepository
+        -RabbitTemplate rabbitTemplate
+        -Clock clock
+        +createComment(String, String, String) CommentCreatedEvent
+        +createComment(String, String, String, String) CommentCreatedEvent
+        +updateComment(String, String) CommentUpdatedEvent
+        +updateComment(String, String, String, String) CommentUpdatedEvent
+        +deleteComment(String) CommentDeletedEvent
+        +deleteComment(String, String, String) CommentDeletedEvent
+        +addReaction(String, String, String) void
+        +listComments(String) List~CommentResponse~
+        +listCommentsTree(String) List~CommentTreeResponse~
+        +getComment(String) CommentResponse
+        -validateParentComment(String bacaanId, String parentComment) void
+        -getCommentOrThrow(String commentId) Comment
+        -sanitize(String content) String
+        -toCommentResponse(Comment) CommentResponse
+        -toTreeResponse(MutableTreeNode) CommentTreeResponse
+    }
+
+    class CommentRepository {
+        <<interface>>
+        +save(Comment) Comment
+        +findById(String) Optional~Comment~
+        +updateContentById(String, String) int
+        +deleteById(String) int
+        +addReaction(String, String, String) void
+        +findAll() List~Comment~
+        +findByBacaanId(String) List~Comment~
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    class Clock {
+        <<external>>
+        +instant() Instant
+        +getZone() ZoneId
+    }
+
+    CommentService <|.. CommentServiceImpl : implements
+    CommentServiceImpl --> CommentRepository : commentRepository
+    CommentServiceImpl --> RabbitTemplate : rabbitTemplate
+    CommentServiceImpl --> Clock : clock
+```
+
+---
+
+### 📐 Code Diagram 3 — Controller, Repository & Security (Forum Service)
+
+Menunjukkan alur request REST, otorisasi berbasis JWT, dan implementasi repository JDBC.
+
+```mermaid
+classDiagram
+    class CommentController {
+        -CommentService commentService
+        +createComment(CreateCommentRequest, Authentication) ResponseEntity~CommentCreatedEvent~
+        +addReaction(String commentId, ReactionRequest, Authentication) ResponseEntity~CommentResponse~
+        +getComments(String bacaanId) List~CommentResponse~
+        +getCommentsTree(String bacaanId) List~CommentTreeResponse~
+        +updateComment(String commentId, UpdateCommentRequest, Authentication) CommentUpdatedEvent
+        +deleteComment(String commentId, Authentication) CommentDeletedEvent
+    }
+
+    class ForumSecurityConfig {
+        +filterChain(HttpSecurity) SecurityFilterChain
+    }
+
+    class JdbcCommentRepository {
+        -JdbcTemplate jdbcTemplate
+        +save(Comment) Comment
+        +findById(String) Optional~Comment~
+        +updateContentById(String, String) int
+        +deleteById(String) int
+        +addReaction(String, String, String) void
+        +findAll() List~Comment~
+        +findByBacaanId(String) List~Comment~
+        -createTableIfNeeded() void
+        -incrementCounter(String, String) void
+        -decrementCounter(String, String) void
+        -mapReactionToColumn(String) String
+    }
+
+    class JwtAuthenticationFilter {
+        <<external>>
+    }
+
+    class CommentCreatedEvent {
+        <<record / shared-lib>>
+    }
+
+    class CommentUpdatedEvent {
+        <<record / shared-lib>>
+    }
+
+    class CommentDeletedEvent {
+        <<record / shared-lib>>
+    }
+
+    CommentController --> CommentService : delegates to
+    ForumSecurityConfig --> JwtAuthenticationFilter : uses
+    CommentController ..> CommentCreatedEvent : returns
+    CommentController ..> CommentUpdatedEvent : returns
+    CommentController ..> CommentDeletedEvent : returns
+    JdbcCommentRepository ..> Comment : persists
+```
+
+---
+
+_Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026_
+_Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)_
