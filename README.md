@@ -1169,6 +1169,336 @@ classDiagram
 
 ---
 
+## Individual Work — Service-Clan (Clan & Liga Microservice)
+
+> **Component Diagram** (C4 Level 3) — Scope: Service-Clan container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
+>
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing lapisan (domain, API, service, scoring, persistence, events, security). Menunjukkan class, interface, record, enum, dan hubungan utama antar elemen kode.
+>
+> _(Ref: Module 09, hal. 119-120)_
+
+---
+
+### Component Diagram — Service-Clan (Port 8085)
+
+```mermaid
+flowchart TD
+    GW["API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
+    DB[("Clan DB\n[Container: H2 / PostgreSQL]\nFile: yomu_clan")]
+    SHARED["Shared Library\n[Library]\nJWT filter, event records"]
+
+    subgraph CLAN["Service-Clan [Container: Spring Boot, Port 8085]"]
+        direction TB
+
+        CTRL["ClanController\n[Component: Spring REST Controller]\nPath: /api/clan/**\nCRUD clan, leaderboard,\njoin, accept/reject, admin end-season"]
+
+        SVC_IF["ClanService\n[Component: Interface]\nKontrak bisnis clan & liga"]
+
+        SVC_IMPL["ClanServiceImpl\n[Component: Service Implementation]\nScoring per tier, buff/debuff,\nend-of-season, event-driven updates"]
+
+        REPO["ClanRepository\n[Component: JDBC Repository]\nJdbcTemplate, schema init,\ntables: clans, clan_members,\nmember_activity"]
+
+        LISTENER["ClanEventListener\n[Component: RabbitMQ Listener]\nKeys: yomu.quiz.completed,\nyomu.achievement.unlocked,\nyomu.daily.mission.completed"]
+
+        SCORING["ScoringStrategy + Factory\n[Component: Strategy Pattern]\nBronze, Silver, Gold, Diamond"]
+
+        SEC["ClanSecurityConfig\n[Component: Security]\nFilter chain scoped /api/clan/**\nJWT filter dari shared-lib"]
+    end
+
+    GW -->|"HTTP /api/clan/**"| CTRL
+    CTRL --> SVC_IF
+    SVC_IMPL -.->|implements| SVC_IF
+    SVC_IMPL --> REPO
+    SVC_IMPL --> SCORING
+    REPO -->|"JdbcTemplate [JDBC]"| DB
+    MQ -.->|"Subscribe @RabbitListener"| LISTENER
+    LISTENER --> SVC_IF
+    SHARED -.->|"JwtAuthenticationFilter"| SEC
+    SEC -.->|"secures"| CTRL
+
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style LISTENER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SCORING fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
+    style DB fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+```
+
+---
+
+### Code Diagram 1 — Domain Model and DTOs
+
+Model domain clan/member dan record request untuk pembuatan clan.
+
+```mermaid
+classDiagram
+    class Clan {
+        <<class>>
+        UUID id
+        String name
+        String description
+        UUID leaderId
+        Tier tier
+        int totalScore
+        double scoreMultiplier
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+
+    class ClanMember {
+        <<class>>
+        UUID id
+        UUID clanId
+        UUID userId
+        String status
+        int personalScore
+        LocalDateTime joinedAt
+    }
+
+    class Tier {
+        <<enumeration>>
+        BRONZE
+        SILVER
+        GOLD
+        DIAMOND
+    }
+
+    class CreateClanRequest {
+        <<record>>
+        String name
+        String description
+        UUID leaderId
+    }
+
+    Clan --> Tier : tier
+```
+
+---
+
+### Code Diagram 2 — REST API Layer
+
+```mermaid
+classDiagram
+    class ClanController {
+        <<class>>
+        +createClan(CreateClanRequest) ResponseEntity~Clan~
+        +getClan(UUID) Clan
+        +leaderboard(String) List~Clan~
+        +joinClan(UUID, UUID) ResponseEntity~Void~
+        +getMembers(UUID) List~ClanMember~
+        +getPending(UUID) List~ClanMember~
+        +accept(UUID, UUID, UUID) ResponseEntity~Void~
+        +reject(UUID, UUID, UUID) ResponseEntity~Void~
+        +deleteClan(UUID, UUID) ResponseEntity~Void~
+        +endSeason() ResponseEntity~Void~
+    }
+
+    class ClanService {
+        <<interface>>
+    }
+
+    ClanController --> ClanService : uses
+```
+
+---
+
+### Code Diagram 3 — Service Layer
+
+```mermaid
+classDiagram
+    class ClanService {
+        <<interface>>
+        +createClan(String, String, UUID) Clan
+        +getClanById(UUID) Clan
+        +getLeaderboard(String) List~Clan~
+        +joinClan(UUID, UUID) void
+        +acceptMember(UUID, UUID, UUID) void
+        +rejectMember(UUID, UUID, UUID) void
+        +deleteClan(UUID, UUID) void
+        +getMembers(UUID) List~ClanMember~
+        +getPendingMembers(UUID) List~ClanMember~
+        +triggerEndOfSeason() void
+        +processUserActivity(UUID, int, Instant) void
+        +processAchievementUnlocked(UUID, String) void
+        +processMissionCompleted(UUID) void
+    }
+
+    class ClanServiceImpl {
+        <<class>>
+        -ClanRepository repository
+    }
+
+    class ClanRepository {
+        <<class>>
+    }
+
+    class ScoringStrategyFactory {
+        <<class>>
+        +getStrategy(Tier)$ ScoringStrategy
+    }
+
+    ClanService <|.. ClanServiceImpl : implements
+    ClanServiceImpl --> ClanRepository : uses
+    ClanServiceImpl ..> ScoringStrategyFactory : getStrategy
+```
+
+---
+
+### Code Diagram 4 — Scoring Strategy Pattern
+
+```mermaid
+classDiagram
+    class ScoringStrategy {
+        <<interface>>
+        +calculateScore(List~ClanMember~) int
+    }
+
+    class ScoringStrategyFactory {
+        <<class>>
+        +getStrategy(Tier)$ ScoringStrategy
+    }
+
+    class BronzeScoringStrategy {
+        <<class>>
+    }
+
+    class SilverScoringStrategy {
+        <<class>>
+    }
+
+    class GoldScoringStrategy {
+        <<class>>
+    }
+
+    class DiamondScoringStrategy {
+        <<class>>
+    }
+
+    class Tier {
+        <<enumeration>>
+    }
+
+    ScoringStrategy <|.. BronzeScoringStrategy
+    ScoringStrategy <|.. SilverScoringStrategy
+    ScoringStrategy <|.. GoldScoringStrategy
+    ScoringStrategy <|.. DiamondScoringStrategy
+    ScoringStrategyFactory ..> Tier : selects by
+    ScoringStrategyFactory ..> ScoringStrategy : creates
+```
+
+---
+
+### Code Diagram 5 — Persistence (ClanRepository)
+
+```mermaid
+classDiagram
+    class ClanRepository {
+        <<class>>
+        -JdbcTemplate jdbcTemplate
+        +saveClan(Clan) Clan
+        +findClanById(UUID) Optional~Clan~
+        +findAllClans() List~Clan~
+        +findClansByTier(Tier) List~Clan~
+        +existsByName(String) boolean
+        +updateClanScore(UUID, int, double) void
+        +updateClanTier(UUID, Tier) void
+        +deleteClanById(UUID) int
+        +saveMember(ClanMember) ClanMember
+        +findMembersByClanId(UUID) List~ClanMember~
+        +findPendingMembersByClanId(UUID) List~ClanMember~
+        +findMemberByUserId(UUID) Optional~ClanMember~
+        +updateMemberStatus(UUID, String) void
+        +updateMemberScore(UUID, int) void
+        +deleteMember(UUID) void
+        +recordQuizActivity(UUID, UUID, int, int) void
+        +recordMissionCompletion(UUID, UUID) void
+        +getClanActivitySummary(UUID) ClanActivitySummary
+    }
+
+    class JdbcTemplate {
+        <<Spring>>
+    }
+
+    class ClanActivitySummary {
+        <<record>>
+        int activeMembers
+        int completedMissions
+        int totalCorrect
+        int totalQuestions
+    }
+
+    ClanRepository --> JdbcTemplate : uses
+    ClanRepository ..> ClanActivitySummary : returns
+
+    note for ClanActivitySummary "Defined as inner record\ninside ClanRepository"
+```
+
+---
+
+### Code Diagram 6 — Event Integration (ClanEventListener)
+
+```mermaid
+classDiagram
+    class ClanEventListener {
+        <<class>>
+        +onQuizCompleted(QuizCompletedEvent) void
+        +onAchievementUnlocked(AchievementUnlockedEvent) void
+        +onMissionCompleted(DailyMissionCompletedEvent) void
+    }
+
+    class QuizCompletedEvent {
+        <<record>>
+    }
+
+    class AchievementUnlockedEvent {
+        <<record>>
+    }
+
+    class DailyMissionCompletedEvent {
+        <<record>>
+    }
+
+    class ClanService {
+        <<interface>>
+    }
+
+    ClanEventListener --> ClanService : delegates
+    ClanEventListener ..> QuizCompletedEvent : consumes
+    ClanEventListener ..> AchievementUnlockedEvent : consumes
+    ClanEventListener ..> DailyMissionCompletedEvent : consumes
+```
+
+---
+
+### Code Diagram 7 — Security (ClanSecurityConfig)
+
+```mermaid
+classDiagram
+    class ClanSecurityConfig {
+        <<class>>
+        +clanSecurityFilterChain(HttpSecurity) SecurityFilterChain
+    }
+
+    class JwtAuthenticationFilter {
+        <<class>>
+    }
+
+    class SecurityFilterChain {
+        <<Spring Security>>
+    }
+
+    ClanSecurityConfig ..> JwtAuthenticationFilter : inserts before auth
+    ClanSecurityConfig ..> SecurityFilterChain : builds
+```
+
+---
+
 ### 👤 Christna Yosua Rotinsulu — Auth Service & API Gateway
 
 Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (*first line of defense*) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
