@@ -1839,6 +1839,294 @@ Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal _Auth Serv
 
 ---
 
+## Individual Work — M. Adella Fathir Supriadi (Learning Service)
+
+> **Component Diagram** (C4 Level 3) — Scope: Learning Service container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
+>
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing komponen. Menunjukkan class, interface, record, dan enum yang membentuk komponen tersebut.
+>
+> *(Ref: Module 09, hal. 119-120)*
+
+---
+
+### 📐 Component Diagram — Learning Service (Port 8082)
+
+```mermaid
+flowchart TD
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
+    DB[("🗄️ Learning DB\n[Container: H2 / PostgreSQL]")]
+    SHARED["📦 Shared Library\n[Library]\nEvent POJOs, JWT Filter"]
+
+    subgraph LEARN["Learning Service [Container: Spring Boot 3.x, Port 8082]"]
+        direction TB
+
+        CTRL["🎯 BacaanController\n[Component: Spring REST Controller]\n\nSingle controller yang meng-handle\nsemua endpoint bacaan, pertanyaan,\nkuis, dan statistik user.\nPath: /api/learning/**"]
+
+        SVC_IF["⚙️ BacaanService\n[Component: Interface]\n\nKontrak bisnis: CRUD bacaan,\nCRUD pertanyaan, submit kuis,\npengecekan status kuis,\ndan statistik user"]
+
+        SVC_IMPL["⚙️ BacaanServiceImpl\n[Component: Service Implementation]\n\nImplementasi logika bisnis.\nPenilaian kuis, validasi kepemilikan,\ndan publishing events ke RabbitMQ"]
+
+        REPO["💾 BacaanRepository\n[Component: JDBC Repository]\n\nAkses data via JdbcTemplate.\nMengelola 3 tabel:\nbacaan, questions, quiz_attempts.\nMembuat tabel via @PostConstruct"]
+
+        SEC["🔒 LearningSecurityConfig\n[Component: Security Configuration]\n\nKonfigurasi Spring Security:\nendpoint admin memerlukan ROLE_ADMIN,\nendpoint publik untuk bacaan & kuis.\nMenggunakan JwtAuthenticationFilter\ndari shared-lib."]
+
+        EX["⚠️ GlobalExceptionHandler\n[Component: Exception Handler]\n\nMenangani AccessDeniedException (403),\nResponseStatusException, dan\ngeneric Exception (500).\nMengembalikan ErrorResponse standar."]
+    end
+
+    %% External → Controller
+    GW -->|"HTTP requests\n/api/learning/**"| CTRL
+
+    %% Controller → Service
+    CTRL --> SVC_IF
+
+    %% Interface → Implementation
+    SVC_IF -.->|"implements"| SVC_IMPL
+
+    %% Service → Repository
+    SVC_IMPL --> REPO
+
+    %% Service → RabbitMQ (publish)
+    SVC_IMPL -.->|"Publishes via RabbitTemplate:\nyomu.learning.completed\nyomu.quiz.completed\n[AMQP]"| MQ
+
+    %% Repository → Database
+    REPO -->|"JdbcTemplate\n[JDBC]"| DB
+
+    %% Shared lib
+    SHARED -.->|"JwtAuthenticationFilter\nEvent POJOs"| SEC
+    SHARED -.->|"LearningCompletedEvent\nQuizCompletedEvent"| SVC_IMPL
+
+    %% Styling
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style EX fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
+```
+
+---
+
+### 📐 Code Diagram 1 — Domain Model (Entities & DTOs)
+
+Menunjukkan elemen kode di dalam komponen model: entity class untuk domain objek dan DTO untuk request/response.
+
+```mermaid
+classDiagram
+    class Bacaan {
+        UUID id
+        String title
+        String content
+        String category
+        UUID createdByUserId
+        Instant createdAt
+        Instant updatedAt
+    }
+
+    class Question {
+        UUID id
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+        String correctOption
+        Instant createdAt
+    }
+
+    class QuizAttempt {
+        UUID id
+        UUID userId
+        UUID bacaanId
+        int score
+        int totalQuestions
+        Instant completedAt
+    }
+
+    class CreateBacaanRequest {
+        String title
+        String content
+        String category
+    }
+
+    class CreateQuestionRequest {
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+        String correctOption
+    }
+
+    class SubmitQuizRequest {
+        UUID userId
+        List~AnswerEntry~ answers
+    }
+
+    class AnswerEntry {
+        UUID questionId
+        String selectedOption
+    }
+
+    class QuizQuestionResponse {
+        <<record>>
+        UUID id
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+    }
+
+    class QuizStatsResponse {
+        int quizCompleted
+        double accuracy
+        List~QuizAttempt~ recentAttempts
+    }
+
+    class ErrorResponse {
+        String message
+        String errorCode
+        Instant timestamp
+        int status
+    }
+
+    Question --> Bacaan : bacaanId
+    QuizAttempt --> Bacaan : bacaanId
+    SubmitQuizRequest --> AnswerEntry : answers
+```
+
+---
+
+### 📐 Code Diagram 2 — Service Layer (Interface + Implementation + Repository)
+
+Menunjukkan kontrak `BacaanService` dan implementasinya `BacaanServiceImpl`, beserta `BacaanRepository` dan dependency-nya.
+
+```mermaid
+classDiagram
+    class BacaanService {
+        <<interface>>
+        +createBacaan(CreateBacaanRequest, UUID createdBy) Bacaan
+        +listBacaan(String category) List~Bacaan~
+        +getBacaanById(UUID id) Bacaan
+        +updateBacaan(UUID id, CreateBacaanRequest) Bacaan
+        +deleteBacaan(UUID id) void
+        +addQuestion(CreateQuestionRequest) Question
+        +getQuestionsByBacaanId(UUID bacaanId) List~QuizQuestionResponse~
+        +deleteQuestion(UUID questionId) void
+        +submitQuiz(UUID bacaanId, SubmitQuizRequest) QuizAttempt
+        +hasCompletedQuiz(UUID userId, UUID bacaanId) boolean
+        +getUserStats(UUID userId) QuizStatsResponse
+    }
+
+    class BacaanServiceImpl {
+        -BacaanRepository bacaanRepository
+        -RabbitTemplate rabbitTemplate
+        +createBacaan(CreateBacaanRequest, UUID) Bacaan
+        +listBacaan(String) List~Bacaan~
+        +getBacaanById(UUID) Bacaan
+        +updateBacaan(UUID, CreateBacaanRequest) Bacaan
+        +deleteBacaan(UUID) void
+        +addQuestion(CreateQuestionRequest) Question
+        +getQuestionsByBacaanId(UUID) List~QuizQuestionResponse~
+        +deleteQuestion(UUID) void
+        +submitQuiz(UUID, SubmitQuizRequest) QuizAttempt
+        +hasCompletedQuiz(UUID, UUID) boolean
+        +getUserStats(UUID) QuizStatsResponse
+        -scoreQuiz(List~Question~, List~AnswerEntry~) int
+        -validateQuizOwner(UUID requestUserId, UUID tokenUserId) void
+    }
+
+    class BacaanRepository {
+        -JdbcTemplate jdbcTemplate
+        +saveBacaan(Bacaan) Bacaan
+        +findAllBacaan() List~Bacaan~
+        +findBacaanByCategory(String) List~Bacaan~
+        +findBacaanById(UUID) Optional~Bacaan~
+        +deleteBacaanById(UUID) void
+        +saveQuestion(Question) Question
+        +findQuestionsByBacaanId(UUID) List~Question~
+        +deleteQuestionById(UUID) void
+        +saveQuizAttempt(QuizAttempt) QuizAttempt
+        +hasUserCompletedQuiz(UUID userId, UUID bacaanId) boolean
+        +findAttemptsByUserId(UUID) List~QuizAttempt~
+        +getStatsByUserId(UUID) QuizStats
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    BacaanService <|.. BacaanServiceImpl : implements
+    BacaanServiceImpl --> BacaanRepository : bacaanRepository
+    BacaanServiceImpl --> RabbitTemplate : rabbitTemplate
+```
+
+---
+
+### 📐 Code Diagram 3 — Controller, Security & Published Events
+
+Menunjukkan `BacaanController` sebagai entry point REST, `LearningSecurityConfig` untuk keamanan, `GlobalExceptionHandler` untuk penanganan error terpusat, serta event objects dari shared-lib yang dipublish oleh service.
+
+```mermaid
+classDiagram
+    class BacaanController {
+        -BacaanService bacaanService
+        +createBacaan(CreateBacaanRequest, Principal) ResponseEntity~Bacaan~
+        +listBacaan(String category) ResponseEntity~List~Bacaan~~
+        +getBacaanById(UUID) ResponseEntity~Bacaan~
+        +updateBacaan(UUID, CreateBacaanRequest) ResponseEntity~Bacaan~
+        +deleteBacaan(UUID) ResponseEntity~Void~
+        +addQuestion(CreateQuestionRequest) ResponseEntity~Question~
+        +getQuestions(UUID bacaanId) ResponseEntity~List~QuizQuestionResponse~~
+        +deleteQuestion(UUID) ResponseEntity~Void~
+        +submitQuiz(UUID bacaanId, SubmitQuizRequest) ResponseEntity~QuizAttempt~
+        +checkQuizStatus(UUID bacaanId, UUID userId) ResponseEntity~Boolean~
+        +getUserStats(UUID userId) ResponseEntity~QuizStatsResponse~
+    }
+    note for BacaanController "Admin endpoints (@PreAuthorize hasRole ADMIN):\ncreateBacaan, updateBacaan, deleteBacaan,\naddQuestion, deleteQuestion\n\nPublic endpoints (no auth required):\nlistBacaan, getBacaanById, getQuestions,\ncheckQuizStatus"
+
+    class LearningSecurityConfig {
+        +SecurityFilterChain filterChain(HttpSecurity) SecurityFilterChain
+        +JwtAuthenticationFilter jwtAuthenticationFilter() JwtAuthenticationFilter
+    }
+    note for LearningSecurityConfig "Permitted tanpa auth:\n/api/learning/bacaan/**\n/api/learning/*/questions\n/api/learning/*/quiz/status\nSession stateless (JWT)"
+
+    class GlobalExceptionHandler {
+        +handleAccessDenied(AccessDeniedException) ResponseEntity~ErrorResponse~
+        +handleResponseStatus(ResponseStatusException) ResponseEntity~ErrorResponse~
+        +handleGeneric(Exception) ResponseEntity~ErrorResponse~
+    }
+
+    class LearningCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID bacaanId
+        Instant occurredAt
+    }
+
+    class QuizCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID quizId
+        Instant occurredAt
+    }
+
+    BacaanController --> BacaanService : delegates to
+    BacaanServiceImpl ..> LearningCompletedEvent : publishes
+    BacaanServiceImpl ..> QuizCompletedEvent : publishes
+```
+
+---
+
+
 ---
 
 _Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026_
