@@ -946,5 +946,5 @@ classDiagram
 
 ---
 
-*Dibuat oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
+*Dibuat oleh Tim Aplikasi Yomu — Kelompok A15, Advanced Programming 2026*
 *Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
