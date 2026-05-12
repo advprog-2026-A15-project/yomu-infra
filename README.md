@@ -1,5 +1,6 @@
 # 📖 Yomu App - Gamified Literacy Platform
-### *Melatih Literasi dengan Pengalaman Belajar yang Menyenangkan*
+
+### _Melatih Literasi dengan Pengalaman Belajar yang Menyenangkan_
 
 Yomu adalah platform aplikasi pembelajaran berbasis gamifikasi yang dirancang untuk membantu masyarakat Indonesia membangun kebiasaan membaca saksama dan verifikasi informasi. Proyek ini menggunakan arsitektur **Microservices Polyrepo** yang modern, skalabel, dan tangguh.
 
@@ -21,15 +22,15 @@ flowchart TD
     %% Nodes
     FE("React Frontend")
     GW{Spring Cloud Gateway}
-    
+
     Auth["Auth Service"]
     Learning["Learning Service"]
     Achievements["Achievements Service"]
     Forum["Forum Service"]
     Clan["Clan Service"]
-    
+
     MQ[["RabbitMQ (Event Bus)"]]
-    
+
     DB_A[("H2 Auth DB")]
     DB_L[("H2 Learning DB")]
     DB_Ac[("H2 Achievements DB")]
@@ -38,18 +39,18 @@ flowchart TD
 
     %% Connections
     FE ==>|HTTP/REST| GW
-    
+
     GW --> Auth
     GW --> Learning
     GW --> Achievements
     GW --> Forum
     GW --> Clan
-    
+
     %% Events
     Learning -.->|Publish| MQ
     Achievements -.->|Publish| MQ
     MQ -.->|Subscribe| Clan
-    
+
     %% Persistence
     Auth --- DB_A
     Learning --- DB_L
@@ -70,43 +71,57 @@ flowchart TD
 ## 🚀 Komponen Utama
 
 ### 1. 🌐 API Gateway (Port 8090)
-Bertindak sebagai *Single Entry Point*. Menggunakan **Spring Cloud Gateway** untuk:
+
+Bertindak sebagai _Single Entry Point_. Menggunakan **Spring Cloud Gateway** untuk:
+
 - **Routing**: Mengarahkan permintaan dari Frontend ke service yang tepat.
 - **Authentication Filter**: Melakukan validasi awal JWT (Security Bypass dapat diaktifkan via environment).
 - **Reactive Stack**: Dibangun di atas Spring WebFlux untuk performa tinggi.
 
 ### 2. 🔐 Auth Service (Port 8081)
+
 Pusat keamanan aplikasi. Fitur utama:
+
 - Registrasi & Login (JWT Based).
 - Dukungan Google SSO.
 - **Rate Limiting**: Melindungi endpoint sensitif dari brute force.
 - RBAC (Role-Based Access Control).
 
 ### 3. 📚 Learning Service (Port 8082)
+
 Inti dari konten edukasi:
+
 - Manajemen Modul Bacaan.
 - Sistem Kuis Interaktif.
 - Publisher Event: Mengirimkan `QuizCompletedEvent` saat user menyelesaikan kuis.
 
 ### 4. 🏆 Achievements Service (Port 8083)
+
 Mengelola sistem gamifikasi:
+
 - Tracking Pencapaian (Badges/Medals).
 - Misi Harian (Daily Missions).
 - Publisher Event: Mengirimkan `AchievementUnlockedEvent` dan `DailyMissionCompletedEvent`.
 
 ### 5. 💬 Forum Service (Port 8084)
+
 Ruang diskusi komunitas:
+
 - Thread-based discussions.
 - Nested Comments (Komentar bersarang).
 - Repositori berbasis JDBC untuk efisiensi query diskusi.
 
 ### 6. 🛡️ Clan Service (Port 8085)
+
 Sistem kompetisi antar pengguna:
+
 - **Strategy Pattern**: Implementasi sistem skor yang berbeda untuk setiap Tier (Bronze, Silver, Gold, Diamond).
 - **Event Listener**: Mengonsumsi event dari `Learning` dan `Achievements` untuk mengupdate peringkat user secara real-time.
 
 ### 📦 Shared Library (`shared-lib`)
+
 Komponen yang digunakan secara bersamaan oleh semua service untuk menjaga konsistensi:
+
 - **Security**: JWT Service & Filters.
 - **Events**: Definisi objek event (POJO) untuk RabbitMQ.
 - **Exception Handling**: Global exception handler & standard error responses.
@@ -115,27 +130,31 @@ Komponen yang digunakan secara bersamaan oleh semua service untuk menjaga konsis
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS, Lucide Icons |
-| **Backend** | Java 21, Spring Boot 3.x, Spring Cloud Gateway |
-| **Messaging** | RabbitMQ (Topic Exchange) |
-| **Persistence** | H2 Database (PostgreSQL Mode) |
-| **Security** | Spring Security, JSON Web Token (JWT) |
-| **DevOps** | Docker, Docker Compose |
-| **Build Tool** | Gradle (Kotlin DSL) |
+| Layer           | Technologies                                   |
+| :-------------- | :--------------------------------------------- |
+| **Frontend**    | React 19, Vite, Tailwind CSS, Lucide Icons     |
+| **Backend**     | Java 21, Spring Boot 3.x, Spring Cloud Gateway |
+| **Messaging**   | RabbitMQ (Topic Exchange)                      |
+| **Persistence** | H2 Database (PostgreSQL Mode)                  |
+| **Security**    | Spring Security, JSON Web Token (JWT)          |
+| **DevOps**      | Docker, Docker Compose                         |
+| **Build Tool**  | Gradle (Kotlin DSL)                            |
 
 ---
 
 ## 📡 Komunikasi Antar Service
 
 ### 🔄 Synchronous (REST)
+
 Digunakan untuk komunikasi dari Frontend melalui API Gateway.
+
 - Format: `JSON` over `HTTP`.
 - Endpoint: `/api/auth/**`, `/api/learning/**`, dll.
 
 ### ⚡ Asynchronous (Event-Driven)
+
 Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
+
 - **Exchange**: `yomu.events` (Topic)
 - **Routing Keys**:
     - `yomu.quiz.completed`: Dipicu oleh Learning Service.
@@ -147,34 +166,39 @@ Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
 ## 📦 Panduan Menjalankan Proyek
 
 ### 🐳 Menggunakan Docker Compose (Direkomendasikan)
+
 Cara tercepat untuk menjalankan seluruh ekosistem Yomu:
 
 1. Pastikan semua repositori microservice berada dalam satu folder root.
 2. Jalankan perintah:
-   ```bash
-   docker compose up --build
-   ```
+    ```bash
+    docker compose up --build
+    ```
 3. Akses:
     - **Frontend**: `http://localhost:5173`
     - **API Gateway**: `http://localhost:8090`
     - **RabbitMQ Dashboard**: `http://localhost:15672` (guest/guest)
 
 ### 🛠️ Menjalankan Secara Manual
+
 Jika ingin menjalankan service tertentu untuk pengembangan:
+
 1. Pastikan RabbitMQ sudah berjalan.
 2. Masuk ke folder service (misal `service-auth`):
-   ```bash
-   ./gradlew bootRun
-   ```
+    ```bash
+    ./gradlew bootRun
+    ```
 3. Untuk Frontend:
-   ```bash
-   cd frontend && npm install && npm run dev
-   ```
+    ```bash
+    cd frontend && npm install && npm run dev
+    ```
 
 ---
 
 ## 🛡️ Prinsip Desain & SOLID
+
 Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
+
 - **Single Responsibility (SRP)**: Setiap microservice menangani satu domain bisnis yang jelas.
 - **Open/Closed (OCP)**: Sistem scoring di `service-clan` menggunakan Strategy Pattern, memungkinkan penambahan Tier baru tanpa mengubah logika inti.
 - **Dependency Inversion (DIP)**: Penggunaan shared interfaces untuk event handling.
@@ -188,11 +212,7 @@ Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
 
 Sistem menggunakan **JSON Web Token (JWT)**. Setiap request dari frontend ke backend (melalui Gateway) akan divalidasi keabsahan tokennya oleh `JwtAuthenticationFilter` yang berada di dalam `shared-lib` dan diimpor oleh setiap service secara terpisah untuk memvalidasi otorisasi.
 
-<<<<<<< HEAD
----
 
-=======
->>>>>>> ee98d471c4fb05ca6872f0b03deba781e3b00acf
 ## MODULE 9 - GROUP DISCUSSION
 
 ## 🏗️ Arsitektur Sistem Saat Ini
@@ -1167,6 +1187,136 @@ classDiagram
     CommentTreeResponse --> CommentTreeResponse : replies
 ```
 
+### 📐 Code Diagram 2 — Service Layer (Forum Service)
+
+Menunjukkan kontrak `CommentService` dan implementasinya `CommentServiceImpl`, beserta dependency utamanya.
+
+```mermaid
+classDiagram
+    class CommentService {
+        <<interface>>
+        +createComment(String userId, String bacaanId, String commentContent) CommentCreatedEvent
+        +createComment(String userId, String bacaanId, String commentContent, String parentComment) CommentCreatedEvent
+        +updateComment(String commentId, String commentContent) CommentUpdatedEvent
+        +updateComment(String commentId, String commentContent, String userId, String role) CommentUpdatedEvent
+        +deleteComment(String commentId) CommentDeletedEvent
+        +deleteComment(String commentId, String userId, String role) CommentDeletedEvent
+        +addReaction(String commentId, String userId, String reactionType) void
+        +listComments(String bacaanId) List~CommentResponse~
+        +listCommentsTree(String bacaanId) List~CommentTreeResponse~
+        +getComment(String commentId) CommentResponse
+    }
+
+    class CommentServiceImpl {
+        -CommentRepository commentRepository
+        -RabbitTemplate rabbitTemplate
+        -Clock clock
+        +createComment(String, String, String) CommentCreatedEvent
+        +createComment(String, String, String, String) CommentCreatedEvent
+        +updateComment(String, String) CommentUpdatedEvent
+        +updateComment(String, String, String, String) CommentUpdatedEvent
+        +deleteComment(String) CommentDeletedEvent
+        +deleteComment(String, String, String) CommentDeletedEvent
+        +addReaction(String, String, String) void
+        +listComments(String) List~CommentResponse~
+        +listCommentsTree(String) List~CommentTreeResponse~
+        +getComment(String) CommentResponse
+        -validateParentComment(String bacaanId, String parentComment) void
+        -getCommentOrThrow(String commentId) Comment
+        -sanitize(String content) String
+        -toCommentResponse(Comment) CommentResponse
+        -toTreeResponse(MutableTreeNode) CommentTreeResponse
+    }
+
+    class CommentRepository {
+        <<interface>>
+        +save(Comment) Comment
+        +findById(String) Optional~Comment~
+        +updateContentById(String, String) int
+        +deleteById(String) int
+        +addReaction(String, String, String) void
+        +findAll() List~Comment~
+        +findByBacaanId(String) List~Comment~
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    class Clock {
+        <<external>>
+        +instant() Instant
+        +getZone() ZoneId
+    }
+
+    CommentService <|.. CommentServiceImpl : implements
+    CommentServiceImpl --> CommentRepository : commentRepository
+    CommentServiceImpl --> RabbitTemplate : rabbitTemplate
+    CommentServiceImpl --> Clock : clock
+```
+
+---
+
+### 📐 Code Diagram 3 — Controller, Repository & Security (Forum Service)
+
+Menunjukkan alur request REST, otorisasi berbasis JWT, dan implementasi repository JDBC.
+
+```mermaid
+classDiagram
+    class CommentController {
+        -CommentService commentService
+        +createComment(CreateCommentRequest, Authentication) ResponseEntity~CommentCreatedEvent~
+        +addReaction(String commentId, ReactionRequest, Authentication) ResponseEntity~CommentResponse~
+        +getComments(String bacaanId) List~CommentResponse~
+        +getCommentsTree(String bacaanId) List~CommentTreeResponse~
+        +updateComment(String commentId, UpdateCommentRequest, Authentication) CommentUpdatedEvent
+        +deleteComment(String commentId, Authentication) CommentDeletedEvent
+    }
+
+    class ForumSecurityConfig {
+        +filterChain(HttpSecurity) SecurityFilterChain
+    }
+
+    class JdbcCommentRepository {
+        -JdbcTemplate jdbcTemplate
+        +save(Comment) Comment
+        +findById(String) Optional~Comment~
+        +updateContentById(String, String) int
+        +deleteById(String) int
+        +addReaction(String, String, String) void
+        +findAll() List~Comment~
+        +findByBacaanId(String) List~Comment~
+        -createTableIfNeeded() void
+        -incrementCounter(String, String) void
+        -decrementCounter(String, String) void
+        -mapReactionToColumn(String) String
+    }
+
+    class JwtAuthenticationFilter {
+        <<external>>
+    }
+
+    class CommentCreatedEvent {
+        <<record / shared-lib>>
+    }
+
+    class CommentUpdatedEvent {
+        <<record / shared-lib>>
+    }
+
+    class CommentDeletedEvent {
+        <<record / shared-lib>>
+    }
+
+    CommentController --> CommentService : delegates to
+    ForumSecurityConfig --> JwtAuthenticationFilter : uses
+    CommentController ..> CommentCreatedEvent : returns
+    CommentController ..> CommentUpdatedEvent : returns
+    CommentController ..> CommentDeletedEvent : returns
+    JdbcCommentRepository ..> Comment : persists
+```
+
 ---
 
 ## Individual Work — Ali Akbar Murtadha Service-Clan
@@ -1501,11 +1651,11 @@ classDiagram
 
 ### 👤 Christna Yosua Rotinsulu — Auth Service & API Gateway
 
-Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (*first line of defense*) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
+Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (_first line of defense_) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
 
 #### 🏗️ Container Diagram — Aliran Autentikasi & Keamanan
 
-Diagram berikut menggambarkan bagaimana saya merancang interaksi sistem saat pengguna mencoba mengakses data sensitif. Permintaan dari *Frontend* tidak pernah langsung menyentuh *Microservice* internal; semuanya harus melewati filter ketat di API Gateway yang saya kembangkan.
+Diagram berikut menggambarkan bagaimana saya merancang interaksi sistem saat pengguna mencoba mengakses data sensitif. Permintaan dari _Frontend_ tidak pernah langsung menyentuh _Microservice_ internal; semuanya harus melewati filter ketat di API Gateway yang saya kembangkan.
 
 ```mermaid
 flowchart TD
@@ -1523,7 +1673,7 @@ flowchart TD
         A_RATE["RateLimitFilter\n(Anti Brute-Force)"]
         A_CORE["AuthService\n(Identity Logic)"]
     end
-    
+
     DB_A[("🗄️ PostgreSQL\n(Auth Database)")]
     MQ["📨 RabbitMQ\n(User Events)"]
     GOOGLE["🔗 Google SSO\n(External Identity)"]
@@ -1546,7 +1696,7 @@ flowchart TD
 
 #### 🧩 Component Diagram — Arsitektur Internal
 
-Saya memecah tanggung jawab di setiap layanan menggunakan prinsip *Clean Architecture*. Di **API Gateway**, saya mengimplementasikan konfigurasi rute yang dinamis. Di **Auth Service**, saya menerapkan perlindungan berlapis, mulai dari filter keamanan hingga logika bisnis yang terisolasi.
+Saya memecah tanggung jawab di setiap layanan menggunakan prinsip _Clean Architecture_. Di **API Gateway**, saya mengimplementasikan konfigurasi rute yang dinamis. Di **Auth Service**, saya menerapkan perlindungan berlapis, mulai dari filter keamanan hingga logika bisnis yang terisolasi.
 
 ```mermaid
 flowchart LR
@@ -1577,6 +1727,7 @@ flowchart LR
 #### 💻 Code Highlight & Logic Explanation
 
 ##### 1. Perlindungan Brute-Force di Auth Service
+
 Saya menyadari bahwa keamanan akun pengguna sangat krusial. Oleh karena itu, saya mengimplementasikan `AuthRateLimitFilter` untuk membatasi jumlah permintaan login yang masuk dari alamat IP yang sama.
 
 ```java
@@ -1597,6 +1748,7 @@ if (counter.count() > MAX_REQUESTS_PER_WINDOW) {
 ```
 
 ##### 2. Gateway Authentication Filter
+
 Di sisi Gateway, saya menciptakan `GatewayAuthFilter` yang mampu membedakan rute publik (seperti login/register) dan rute privat secara cerdas menggunakan `isPublicRequest` logic.
 
 ```java
@@ -1615,7 +1767,8 @@ private boolean isPublicRequest(ServerHttpRequest request) {
 #### 📊 Code Diagrams
 
 ##### Code Diagram 1: Auth Service Core Structure
-Saya memisahkan antarmuka `AuthService` dengan implementasinya (`AuthServiceImpl`) untuk memudahkan pengujian unit (*Unit Testing*) dan menjaga fleksibilitas kode.
+
+Saya memisahkan antarmuka `AuthService` dengan implementasinya (`AuthServiceImpl`) untuk memudahkan pengujian unit (_Unit Testing_) dan menjaga fleksibilitas kode.
 
 ```mermaid
 classDiagram
@@ -1648,6 +1801,7 @@ classDiagram
 ```
 
 ##### Code Diagram 2: Gateway Security Mechanism
+
 Mekanisme ini menjamin bahwa setiap permintaan yang memerlukan otorisasi akan diverifikasi keabsahan tokennya sebelum diteruskan ke layanan tujuan.
 
 ```mermaid
@@ -1681,139 +1835,9 @@ classDiagram
     AuthFacade --> JwtService
 ```
 
-Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal *Auth Service* tidak akan merusak integritas komponen lain yang mengonsumsinya.
+Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal _Auth Service_ tidak akan merusak integritas komponen lain yang mengonsumsinya.
 
 ---
-
-### 📐 Code Diagram 2 — Service Layer (Forum Service)
-
-Menunjukkan kontrak `CommentService` dan implementasinya `CommentServiceImpl`, beserta dependency utamanya.
-
-```mermaid
-classDiagram
-    class CommentService {
-        <<interface>>
-        +createComment(String userId, String bacaanId, String commentContent) CommentCreatedEvent
-        +createComment(String userId, String bacaanId, String commentContent, String parentComment) CommentCreatedEvent
-        +updateComment(String commentId, String commentContent) CommentUpdatedEvent
-        +updateComment(String commentId, String commentContent, String userId, String role) CommentUpdatedEvent
-        +deleteComment(String commentId) CommentDeletedEvent
-        +deleteComment(String commentId, String userId, String role) CommentDeletedEvent
-        +addReaction(String commentId, String userId, String reactionType) void
-        +listComments(String bacaanId) List~CommentResponse~
-        +listCommentsTree(String bacaanId) List~CommentTreeResponse~
-        +getComment(String commentId) CommentResponse
-    }
-
-    class CommentServiceImpl {
-        -CommentRepository commentRepository
-        -RabbitTemplate rabbitTemplate
-        -Clock clock
-        +createComment(String, String, String) CommentCreatedEvent
-        +createComment(String, String, String, String) CommentCreatedEvent
-        +updateComment(String, String) CommentUpdatedEvent
-        +updateComment(String, String, String, String) CommentUpdatedEvent
-        +deleteComment(String) CommentDeletedEvent
-        +deleteComment(String, String, String) CommentDeletedEvent
-        +addReaction(String, String, String) void
-        +listComments(String) List~CommentResponse~
-        +listCommentsTree(String) List~CommentTreeResponse~
-        +getComment(String) CommentResponse
-        -validateParentComment(String bacaanId, String parentComment) void
-        -getCommentOrThrow(String commentId) Comment
-        -sanitize(String content) String
-        -toCommentResponse(Comment) CommentResponse
-        -toTreeResponse(MutableTreeNode) CommentTreeResponse
-    }
-
-    class CommentRepository {
-        <<interface>>
-        +save(Comment) Comment
-        +findById(String) Optional~Comment~
-        +updateContentById(String, String) int
-        +deleteById(String) int
-        +addReaction(String, String, String) void
-        +findAll() List~Comment~
-        +findByBacaanId(String) List~Comment~
-    }
-
-    class RabbitTemplate {
-        <<external>>
-        +convertAndSend(String routingKey, Object message) void
-    }
-
-    class Clock {
-        <<external>>
-        +instant() Instant
-        +getZone() ZoneId
-    }
-
-    CommentService <|.. CommentServiceImpl : implements
-    CommentServiceImpl --> CommentRepository : commentRepository
-    CommentServiceImpl --> RabbitTemplate : rabbitTemplate
-    CommentServiceImpl --> Clock : clock
-```
-
----
-
-### 📐 Code Diagram 3 — Controller, Repository & Security (Forum Service)
-
-Menunjukkan alur request REST, otorisasi berbasis JWT, dan implementasi repository JDBC.
-
-```mermaid
-classDiagram
-    class CommentController {
-        -CommentService commentService
-        +createComment(CreateCommentRequest, Authentication) ResponseEntity~CommentCreatedEvent~
-        +addReaction(String commentId, ReactionRequest, Authentication) ResponseEntity~CommentResponse~
-        +getComments(String bacaanId) List~CommentResponse~
-        +getCommentsTree(String bacaanId) List~CommentTreeResponse~
-        +updateComment(String commentId, UpdateCommentRequest, Authentication) CommentUpdatedEvent
-        +deleteComment(String commentId, Authentication) CommentDeletedEvent
-    }
-
-    class ForumSecurityConfig {
-        +filterChain(HttpSecurity) SecurityFilterChain
-    }
-
-    class JdbcCommentRepository {
-        -JdbcTemplate jdbcTemplate
-        +save(Comment) Comment
-        +findById(String) Optional~Comment~
-        +updateContentById(String, String) int
-        +deleteById(String) int
-        +addReaction(String, String, String) void
-        +findAll() List~Comment~
-        +findByBacaanId(String) List~Comment~
-        -createTableIfNeeded() void
-        -incrementCounter(String, String) void
-        -decrementCounter(String, String) void
-        -mapReactionToColumn(String) String
-    }
-
-    class JwtAuthenticationFilter {
-        <<external>>
-    }
-
-    class CommentCreatedEvent {
-        <<record / shared-lib>>
-    }
-
-    class CommentUpdatedEvent {
-        <<record / shared-lib>>
-    }
-
-    class CommentDeletedEvent {
-        <<record / shared-lib>>
-    }
-
-    CommentController --> CommentService : delegates to
-    ForumSecurityConfig --> JwtAuthenticationFilter : uses
-    CommentController ..> CommentCreatedEvent : returns
-    CommentController ..> CommentUpdatedEvent : returns
-    CommentController ..> CommentDeletedEvent : returns
-    JdbcCommentRepository ..> Comment : persists
-```
 
 ---
 
