@@ -1169,7 +1169,7 @@ classDiagram
 
 ---
 
-## Individual Work — Service-Clan (Clan & Liga Microservice)
+## Individual Work — Ali Akbar Murtadha Service-Clan
 
 > **Component Diagram** (C4 Level 3) — Scope: Service-Clan container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
 >
