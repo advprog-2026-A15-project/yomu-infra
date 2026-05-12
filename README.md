@@ -871,3 +871,193 @@ classDiagram
 ---
 *Dibuat oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
 *Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
+
+---
+
+### 👤 Christna Yosua Rotinsulu — Auth Service & API Gateway
+
+Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (*first line of defense*) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
+
+#### 🏗️ Container Diagram — Aliran Autentikasi & Keamanan
+
+Diagram berikut menggambarkan bagaimana saya merancang interaksi sistem saat pengguna mencoba mengakses data sensitif. Permintaan dari *Frontend* tidak pernah langsung menyentuh *Microservice* internal; semuanya harus melewati filter ketat di API Gateway yang saya kembangkan.
+
+```mermaid
+flowchart TD
+    PELAJAR["👤 Pengguna\n(Pelajar / Admin)"]
+    FE["🌐 Frontend\n[React 19 + Vite]"]
+
+    subgraph GW["API Gateway (Port 8090)"]
+        direction TB
+        G_FILTER["GatewayAuthFilter\n(JWT Validator)"]
+        G_SEC["SecurityConfig\n(Reactive WebFlux)"]
+    end
+
+    subgraph AUTH["Auth Service (Port 8081)"]
+        direction TB
+        A_RATE["RateLimitFilter\n(Anti Brute-Force)"]
+        A_CORE["AuthService\n(Identity Logic)"]
+    end
+    
+    DB_A[("🗄️ PostgreSQL\n(Auth Database)")]
+    MQ["📨 RabbitMQ\n(User Events)"]
+    GOOGLE["🔗 Google SSO\n(External Identity)"]
+
+    PELAJAR --> FE
+    FE -->|"HTTP + JWT Header"| GW
+    GW -->|"Validate Token"| G_FILTER
+    G_FILTER -->|"Forward if Valid"| AUTH
+    AUTH --> A_RATE
+    A_RATE --> A_CORE
+    A_CORE --> DB_A
+    A_CORE -.->|"Publish UserRegistered"| MQ
+    A_CORE -.->|"Verify"| GOOGLE
+
+    style GW fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style AUTH fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style DB_A fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+```
+
+#### 🧩 Component Diagram — Arsitektur Internal
+
+Saya memecah tanggung jawab di setiap layanan menggunakan prinsip *Clean Architecture*. Di **API Gateway**, saya mengimplementasikan konfigurasi rute yang dinamis. Di **Auth Service**, saya menerapkan perlindungan berlapis, mulai dari filter keamanan hingga logika bisnis yang terisolasi.
+
+```mermaid
+flowchart LR
+    subgraph GATEWAY["API Gateway Component"]
+        direction TB
+        R1["GatewayConfig\n(Route Definitions)"]
+        R2["GatewayAuthFilter\n(Global JWT Interceptor)"]
+        R3["CorsConfig\n(Global Policy)"]
+    end
+
+    subgraph AUTH_COMP["Auth Service Component"]
+        direction TB
+        C1["AuthController\n(REST Interface)"]
+        C2["AuthRateLimitFilter\n(Brute-Force Protection)"]
+        C3["AuthServiceImpl\n(Business Logic)"]
+        C4["UserRepository\n(Data Access Layer)"]
+    end
+
+    GATEWAY -->|"/api/auth/**"| AUTH_COMP
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+
+    style GATEWAY fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
+    style AUTH_COMP fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
+```
+
+#### 💻 Code Highlight & Logic Explanation
+
+##### 1. Perlindungan Brute-Force di Auth Service
+Saya menyadari bahwa keamanan akun pengguna sangat krusial. Oleh karena itu, saya mengimplementasikan `AuthRateLimitFilter` untuk membatasi jumlah permintaan login yang masuk dari alamat IP yang sama.
+
+```java
+// Contoh potongan kode AuthRateLimitFilter yang saya buat
+String key = request.getRequestURI() + ":" + clientIp(request);
+WindowCounter counter = counters.compute(key, (ignored, current) -> {
+    long now = Instant.now().getEpochSecond();
+    if (current == null || now - current.windowStartedAt() >= WINDOW_SECONDS) {
+        return new WindowCounter(now, 1);
+    }
+    return new WindowCounter(current.windowStartedAt(), current.count() + 1);
+});
+
+if (counter.count() > MAX_REQUESTS_PER_WINDOW) {
+    response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+    return; // Request ditolak
+}
+```
+
+##### 2. Gateway Authentication Filter
+Di sisi Gateway, saya menciptakan `GatewayAuthFilter` yang mampu membedakan rute publik (seperti login/register) dan rute privat secara cerdas menggunakan `isPublicRequest` logic.
+
+```java
+// Cuplikan logika penanganan request publik yang saya rancang
+private boolean isPublicRequest(ServerHttpRequest request) {
+    String path = request.getURI().getPath();
+    // Bypass autentikasi untuk endpoint tertentu
+    if (path.equals("/api/auth/register") || path.equals("/api/auth/login")) {
+        return true;
+    }
+    // Izinkan akses baca (GET) pada konten pembelajaran tanpa login
+    return HttpMethod.GET.equals(request.getMethod()) && path.startsWith("/api/learning/bacaan");
+}
+```
+
+#### 📊 Code Diagrams
+
+##### Code Diagram 1: Auth Service Core Structure
+Saya memisahkan antarmuka `AuthService` dengan implementasinya (`AuthServiceImpl`) untuk memudahkan pengujian unit (*Unit Testing*) dan menjaga fleksibilitas kode.
+
+```mermaid
+classDiagram
+    class AuthController {
+        +login(LoginRequest)
+        +register(RegisterRequest)
+        +googleSsoLogin(GoogleSsoRequest)
+    }
+    class AuthService {
+        <<interface>>
+        +login()
+        +register()
+    }
+    class AuthServiceImpl {
+        -UserRepository repo
+        -JwtService jwt
+        -RabbitTemplate rabbit
+        +login()
+        +register()
+    }
+    class UserRepository {
+        <<interface>>
+        +findByEmail()
+        +save()
+    }
+
+    AuthController --> AuthService : delegates
+    AuthService <|.. AuthServiceImpl : implements
+    AuthServiceImpl --> UserRepository : uses
+```
+
+##### Code Diagram 2: Gateway Security Mechanism
+Mekanisme ini menjamin bahwa setiap permintaan yang memerlukan otorisasi akan diverifikasi keabsahan tokennya sebelum diteruskan ke layanan tujuan.
+
+```mermaid
+classDiagram
+    class GatewayAuthFilter {
+        -JwtService jwtService
+        +filter(exchange, chain) Mono~Void~
+        -isPublicRequest(request) boolean
+    }
+    class GlobalFilter { <<interface>> }
+    class Ordered { <<interface>> }
+
+    GatewayAuthFilter ..|> GlobalFilter
+    GatewayAuthFilter ..|> Ordered
+    GatewayAuthFilter --> JwtService : validates token
+```
+
+#### 🌟 Bonus: Structural Pattern Implementation (Auth Facade)
+
+Untuk memenuhi standar arsitektur yang bersih, saya mengimplementasikan **Facade Pattern** melalui `AuthFacade`. Komponen ini bertugas sebagai pintu masuk tunggal bagi layanan internal lain yang membutuhkan data pengguna atau validasi token tanpa harus terpapar langsung pada kompleksitas `UserRepository` atau `AuthService`.
+
+```mermaid
+classDiagram
+    class AuthFacade {
+        -UserRepository userRepository
+        -JwtService jwtService
+        +getUserById(UUID): Optional~UserDto~
+        +isTokenValid(String): boolean
+    }
+    AuthFacade --> UserRepository
+    AuthFacade --> JwtService
+```
+
+Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal *Auth Service* tidak akan merusak integritas komponen lain yang mengonsumsinya.
+
+---
+*Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
+*Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
