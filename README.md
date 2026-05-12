@@ -345,3 +345,249 @@ flowchart TD
 - Service backend **tidak di-expose** ke luar — hanya dapat diakses melalui API Gateway
 - H2 database berjalan **embedded** di dalam proses setiap service (bukan container terpisah)
 - Komunikasi antar container menggunakan **Docker internal network**
+
+
+## 🔮 Arsitektur Masa Depan (Setelah Risk Storming)
+
+### Skenario: Yomu Mengalami Kesuksesan Besar
+
+Bayangkan Yomu telah berhasil diluncurkan dan mendapat adopsi massal dari sekolah-sekolah dan institusi pendidikan di seluruh Indonesia. Jumlah pengguna melonjak dari ratusan menjadi **ratusan ribu pengguna aktif harian**. Pada kondisi ini, kami menganalisis risiko arsitektur saat ini menggunakan teknik **Risk Storming** (ref: Module 09, Chapter 8 — *Analysing Architectural Risk*).
+
+---
+
+### 📊 Risk Matrix
+
+Kami menggunakan **Architecture Risk Matrix** (ref: Module 09, Figure 20-1) dengan dua dimensi:
+- **Overall Impact of Risk**: Low (1), Medium (2), High (3)
+- **Likelihood of Risk Occurring**: Low (1), Medium (2), High (3)
+
+Nilai risiko = **Impact × Likelihood**. Klasifikasi: 🟢 Low (1-2), 🟡 Medium (3-4), 🔴 High (6-9).
+
+```
+                    Likelihood of Risk Occurring
+                    Low (1)     Medium (2)     High (3)
+                 ┌──────────┬────────────┬────────────┐
+    Low (1)      │  1 🟢    │   2 🟢     │   3 🟡     │
+Impact           ├──────────┼────────────┼────────────┤
+    Medium (2)   │  2 🟢    │   4 🟡     │   6 🔴     │
+                 ├──────────┼────────────┼────────────┤
+    High (3)     │  3 🟡    │   6 🔴     │   9 🔴     │
+                 └──────────┴────────────┴────────────┘
+```
+
+---
+
+### 🌪️ Risk Storming — Tahap 1: Identification (Individual, Non-Collaborative)
+
+> *"Risk storming is a collaborative exercise used to determine architectural risk within a specific dimension."*
+> — Module 09, hal. 99
+
+Setiap anggota tim secara **individual** (tanpa diskusi) menganalisis arsitektur saat ini dan menempatkan "Post-it notes" virtual berwarna di area arsitektur yang dianggap berisiko. Dimensi risiko yang dianalisis: **availability, scalability, data integrity, dan security**.
+
+Hasil identifikasi individual:
+
+| Area Arsitektur | Anggota | Dimensi | Impact | Likelihood | Risk Score | Level |
+|:---|:---|:---|:---:|:---:|:---:|:---:|
+| H2 Database (semua service) | Tirta | Data Integrity | 3 (High) | 3 (High) | **9** | 🔴 High |
+| H2 Database (semua service) | Adella | Availability | 3 (High) | 3 (High) | **9** | 🔴 High |
+| H2 Database (semua service) | Nathanael | Scalability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
+| API Gateway (single instance) | Yosua | Availability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
+| API Gateway (no circuit breaker) | Ali | Availability | 3 (High) | 2 (Medium) | **6** | 🔴 High |
+| RabbitMQ (no DLQ) | Tirta | Data Integrity | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
+| RabbitMQ (no DLQ) | Yosua | Availability | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
+| Frontend-Backend CORS | Nathanael | Security | 2 (Medium) | 3 (High) | **6** | 🔴 High |
+| No Monitoring/Health Check | Ali | Availability | 2 (Medium) | 3 (High) | **6** | 🔴 High |
+| Non-idempotent Event Handlers | Adella | Data Integrity | 2 (Medium) | 2 (Medium) | **4** | 🟡 Medium |
+| Shared Library coupling | Nathanael | Scalability | 1 (Low) | 2 (Medium) | **2** | 🟢 Low |
+
+---
+
+### 🤝 Risk Storming — Tahap 2: Consensus (Collaborative)
+
+> *"The goal of this activity is to analyze the risk areas as a team and gain consensus in terms of the risk qualification."*
+> — Module 09, hal. 102
+
+Seluruh anggota tim berkumpul dan menempelkan "Post-it notes" mereka pada diagram arsitektur. Berikut hasil konsensus setelah diskusi:
+
+**1. H2 Database — Semua sepakat: 🔴 HIGH RISK (9)**
+Tiga anggota secara independen mengidentifikasi H2 sebagai area risiko tertinggi. H2 adalah database in-memory/embedded yang **kehilangan seluruh data saat restart**. Dalam skenario ratusan ribu pengguna, data achievement, progress belajar, dan histori clan yang hilang akan berdampak fatal. Semua anggota sepakat bahwa baik impact maupun likelihood sama-sama tinggi karena Docker container secara natural akan restart saat update atau scaling.
+
+**2. API Gateway (Single Point of Failure) — Konsensus: 🔴 HIGH RISK (6)**
+Dua anggota mengidentifikasi API Gateway sebagai risiko tinggi. Yosua menjelaskan bahwa jika API Gateway down, **seluruh sistem tidak dapat diakses** (impact = 3). Ali menambahkan bahwa tanpa circuit breaker, satu service yang lambat/down bisa menyebabkan *cascading failure* yang menjatuhkan gateway. Setelah diskusi, semua sepakat likelihood = 2 (medium) karena Spring Cloud Gateway cukup stabil, tapi impact-nya sangat tinggi.
+
+**3. Frontend-Backend CORS — Konsensus: 🔴 HIGH RISK (6)**
+Nathanael mengidentifikasi masalah ini berdasarkan pengalaman langsung tim (terlihat dari chat bahwa frontend tidak bisa berkomunikasi dengan backend). Setelah diskusi, tim sepakat ini lebih merupakan masalah konfigurasi yang bisa diperbaiki di level gateway — bukan risiko arsitektural fundamental. Namun, **jika tidak ditangani dengan konfigurasi terpusat**, masalah ini akan terus berulang saat service baru ditambahkan.
+
+**4. Tidak Ada Monitoring — Konsensus: 🔴 HIGH RISK (6)**
+Ali menjelaskan bahwa tanpa health check dan monitoring, tim **baru menyadari ada masalah ketika pengguna sudah terdampak**. Dalam arsitektur microservices dengan 6+ service, ketiadaan observability membuat debugging sangat sulit. Semua sepakat.
+
+**5. RabbitMQ tanpa DLQ — Konsensus: 🟡 MEDIUM RISK (4)**
+Dua anggota mengidentifikasi ini secara independen. Tanpa Dead Letter Queue, event yang gagal diproses (misalnya `QuizCompletedEvent` yang gagal diproses oleh Clan Service) akan **hilang tanpa jejak**. Tim sepakat dampaknya medium karena data utama tidak hilang (hanya derived data seperti skor clan yang tidak terupdate).
+
+**6. Non-idempotent Event Handlers — Konsensus: 🟡 MEDIUM RISK (4)**
+Adella menjelaskan bahwa jika terjadi duplikasi pesan (umum di sistem distributed), event bisa diproses lebih dari sekali — menyebabkan achievement ter-trigger ganda atau skor clan dihitung dua kali. Tim sepakat ini medium karena likelihood-nya bergantung pada konfigurasi RabbitMQ.
+
+**7. Shared Library Coupling — Konsensus: 🟢 LOW RISK (2)**
+Hanya satu anggota yang mengidentifikasi ini. Setelah diskusi, tim sepakat bahwa shared library hanya berisi contracts (DTO, event POJO) yang jarang berubah, sehingga risiko coupling rendah.
+
+---
+
+### 🛠️ Risk Storming — Tahap 3: Mitigation (Collaborative)
+
+> *"Mitigating risk within an architecture usually involves changes or enhancements to certain areas that otherwise might have been deemed perfect."*
+> — Module 09, hal. 104
+
+Berdasarkan konsensus, tim merancang mitigasi untuk setiap risiko:
+
+| Risk Area | Score | Mitigasi | Cost/Effort |
+|:---|:---:|:---|:---:|
+| H2 Database | 9 🔴 | **Migrasi ke PostgreSQL** — satu instance PostgreSQL per service, berjalan sebagai Docker container terpisah. H2 sudah berjalan dalam PostgreSQL compatibility mode sehingga migrasi relatif smooth. | Medium |
+| API Gateway SPOF | 6 🔴 | **Tambah Circuit Breaker (Resilience4j)** di gateway level. Jika sebuah service tidak merespons dalam batas waktu, circuit breaker membuka sirkuit dan mengembalikan fallback response. | Low |
+| CORS Issue | 6 🔴 | **Pusatkan konfigurasi CORS di API Gateway**. Semua allowed origins, methods, headers dikonfigurasi di satu tempat (gateway), bukan tersebar di setiap service. | Low |
+| No Monitoring | 6 🔴 | **Tambah Spring Actuator + Prometheus + Grafana**. Setiap service mengekspos `/actuator/health` dan `/actuator/prometheus`. Prometheus meng-scrape metrics, Grafana memvisualisasikan dan mengirim alert. | Medium |
+| RabbitMQ no DLQ | 4 🟡 | **Tambah Dead Letter Queue + Retry Policy**. Event yang gagal diproses masuk DLQ untuk di-inspect dan di-retry (otomatis atau manual). | Low |
+| Non-idempotent Handlers | 4 🟡 | **Implementasi idempotent consumers**. Setiap event diberi unique ID; consumer menyimpan log event ID yang sudah diproses untuk mencegah double processing. | Low |
+
+---
+
+### 📐 Context Diagram Baru (Setelah Mitigasi)
+
+```mermaid
+flowchart TD
+    PELAJAR["👤 Pelajar\n[Person]\n\nPengguna utama platform"]
+    ADMIN["👤 Admin\n[Person]\n\nPengelola konten & monitoring"]
+
+    YOMU["📖 Yomu Platform\n[Software System]\n\nPlatform literasi gamifikasi\ndengan arsitektur microservices\nyang resilient & observable"]
+
+    GOOGLE["🔗 Google OAuth 2.0\n[External System]\nIdentity Provider"]
+
+    PROMETHEUS["📊 Prometheus + Grafana\n[External System]\nMonitoring & Alerting Stack"]
+
+    PELAJAR -->|"Mengakses fitur\npembelajaran & sosial\n[HTTPS]"| YOMU
+    ADMIN -->|"Mengelola konten,\nkonfigurasi, & monitoring\n[HTTPS]"| YOMU
+    YOMU -->|"Autentikasi SSO\n[OAuth 2.0]"| GOOGLE
+    YOMU -->|"Expose metrics\n[HTTP /actuator/prometheus]"| PROMETHEUS
+
+    style YOMU fill:#1168BD,stroke:#0B4884,color:#FFFFFF
+    style PELAJAR fill:#08427B,stroke:#052E56,color:#FFFFFF
+    style ADMIN fill:#08427B,stroke:#052E56,color:#FFFFFF
+    style GOOGLE fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style PROMETHEUS fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+```
+
+---
+
+### 📐 Container Diagram Baru (Setelah Mitigasi)
+
+Perubahan ditandai dengan label **[NEW]** atau **[UPGRADED]**.
+
+```mermaid
+flowchart TD
+    PELAJAR["👤 Pelajar"]
+    ADMIN["👤 Admin"]
+
+    subgraph boundary["Yomu Platform [Software System] — FUTURE"]
+        direction TB
+
+        FE["🌐 Frontend\n[Container: React 19 + Vite]\n\nSPA + Error Boundaries\n+ Retry Logic\n\nPort: 5173"]
+
+        GW["🚪 API Gateway [UPGRADED]\n[Container: Spring Cloud Gateway]\n\nRouting, JWT Validation,\n+ Centralized CORS Config [NEW]\n+ Resilience4j Circuit Breaker [NEW]\n+ Global Rate Limiting [NEW]\n\nPort: 8090"]
+
+        AUTH["🔐 Auth Service [UPGRADED]\n[Container: Spring Boot 3.x]\n\nRegistrasi, Login, JWT, SSO,\nRate Limiting, RBAC\n+ Actuator Health Endpoint [NEW]\n\nPort: 8081"]
+
+        LEARN["📚 Learning Service [UPGRADED]\n[Container: Spring Boot 3.x]\n\nBacaan, Kuis\n+ Idempotent Event Publishing [NEW]\n+ Actuator Health Endpoint [NEW]\n\nPort: 8082"]
+
+        ACHIEV["🏆 Achievements Service [UPGRADED]\n[Container: Spring Boot 3.x]\n\nBadges, Daily Missions\n+ Idempotent Event Publishing [NEW]\n+ Actuator Health Endpoint [NEW]\n\nPort: 8083"]
+
+        FORUM["💬 Forum Service [UPGRADED]\n[Container: Spring Boot 3.x]\n\nThreads, Nested Comments\n+ Input Sanitization [NEW]\n+ Actuator Health Endpoint [NEW]\n\nPort: 8084"]
+
+        CLAN["🛡️ Clan Service [UPGRADED]\n[Container: Spring Boot 3.x]\n\nClan, Leaderboard, Scoring\n+ Idempotent Consumer [NEW]\n+ Actuator Health Endpoint [NEW]\n\nPort: 8085"]
+
+        MQ["📨 RabbitMQ [UPGRADED]\n[Container: Message Broker]\n\nTopic Exchange 'yomu.events'\n+ Dead Letter Queue [NEW]\n+ Message TTL & Retry [NEW]\n\nPort: 5672 / 15672"]
+
+        DB_A[("🗄️ Auth DB [UPGRADED]\n[Container: PostgreSQL]")]
+        DB_L[("🗄️ Learning DB [UPGRADED]\n[Container: PostgreSQL]")]
+        DB_AC[("🗄️ Achievements DB [UPGRADED]\n[Container: PostgreSQL]")]
+        DB_F[("🗄️ Forum DB [UPGRADED]\n[Container: PostgreSQL]")]
+        DB_C[("🗄️ Clan DB [UPGRADED]\n[Container: PostgreSQL]")]
+
+        subgraph observability["Observability Stack [NEW]"]
+            PROM["📊 Prometheus\n[Container: Metrics Collector]\nPort: 9090"]
+            GRAF["📈 Grafana\n[Container: Dashboard]\nPort: 3000"]
+        end
+    end
+
+    GOOGLE["🔗 Google OAuth 2.0\n[External System]"]
+
+    %% User → Frontend
+    PELAJAR -->|"HTTPS"| FE
+    ADMIN -->|"HTTPS"| FE
+    ADMIN -->|"Dashboard\n[HTTPS :3000]"| GRAF
+
+    %% Frontend → Gateway
+    FE -->|"API calls\n[HTTP/REST, JSON]"| GW
+
+    %% Gateway → Services (with Circuit Breaker)
+    GW -->|"/api/auth/**\n[HTTP + Circuit Breaker]"| AUTH
+    GW -->|"/api/learning/**\n[HTTP + Circuit Breaker]"| LEARN
+    GW -->|"/api/achievements/**\n[HTTP + Circuit Breaker]"| ACHIEV
+    GW -->|"/api/forum/**\n[HTTP + Circuit Breaker]"| FORUM
+    GW -->|"/api/clan/**\n[HTTP + Circuit Breaker]"| CLAN
+
+    %% Async Events (with DLQ & Retry)
+    LEARN -.->|"Publishes:\nyomu.quiz.completed\n[AMQP + DLQ]"| MQ
+    ACHIEV -.->|"Publishes:\nyomu.achievement.unlocked\nyomu.daily.mission.completed\n[AMQP + DLQ]"| MQ
+    MQ -.->|"Subscribes:\nidempotent consumer\n[AMQP]"| CLAN
+    MQ -.->|"Subscribes:\nidempotent consumer\n[AMQP]"| ACHIEV
+
+    %% Database — NOW PostgreSQL
+    AUTH --- DB_A
+    LEARN --- DB_L
+    ACHIEV --- DB_AC
+    FORUM --- DB_F
+    CLAN --- DB_C
+
+    %% External
+    AUTH -->|"OAuth 2.0"| GOOGLE
+
+    %% Observability
+    AUTH -.->|"/actuator/prometheus"| PROM
+    LEARN -.->|"/actuator/prometheus"| PROM
+    ACHIEV -.->|"/actuator/prometheus"| PROM
+    FORUM -.->|"/actuator/prometheus"| PROM
+    CLAN -.->|"/actuator/prometheus"| PROM
+    GW -.->|"/actuator/prometheus"| PROM
+    PROM -->|"Data Source"| GRAF
+
+    %% Styling
+    style FE fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style AUTH fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style LEARN fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style ACHIEV fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style FORUM fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style CLAN fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style GOOGLE fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style PELAJAR fill:#08427B,stroke:#052E56,color:#FFFFFF
+    style ADMIN fill:#08427B,stroke:#052E56,color:#FFFFFF
+    style PROM fill:#E6522C,stroke:#B33F1F,color:#FFFFFF
+    style GRAF fill:#F46800,stroke:#C45300,color:#FFFFFF
+    style DB_A fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style DB_L fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style DB_AC fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style DB_F fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style DB_C fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+```
+
+**Ringkasan Perubahan Arsitektur:**
+
+| Komponen | Sebelum (Current) | Sesudah (Future) | Risk Score |
+|:---|:---|:---|:---:|
+| Database | H2 In-Memory (embedded) | PostgreSQL (dedicated container) | 9 → 2 |
+| API Gateway | Routing + JWT saja | + Circuit Breaker + CORS + Rate Limiting | 6 → 2 |
+| Monitoring | Tidak ada | Prometheus + Grafana + Actuator | 6 → 1 |
+| Message Queue | RabbitMQ basic | + Dead Letter Queue + Retry Policy | 4 → 1 |
+| Event Handling | Basic pub/sub | Idempotent consumers + event dedup | 4 → 1 |
+
+
