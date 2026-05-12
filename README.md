@@ -606,217 +606,345 @@ Proses Risk Storming kami mengikuti tiga tahapan yang diajarkan dalam Module 09 
 **Tahap ketiga — Mitigation** — adalah tahap terpenting di mana tim secara kolaboratif merancang perubahan arsitektur untuk mengurangi atau menghilangkan risiko yang telah diidentifikasi. Sebagaimana dinyatakan dalam Module 09 (ref: hal. 104), mitigasi risiko biasanya melibatkan perubahan atau peningkatan pada area arsitektur yang sebelumnya dianggap sudah sempurna, dan perubahan ini biasanya menimbulkan biaya tambahan. Tim kami menerapkan prinsip ini dengan merancang mitigasi yang proporsional terhadap tingkat risiko: untuk risiko tertinggi (H2 Database, score 9), kami merencanakan migrasi ke PostgreSQL yang memerlukan effort medium namun menyelesaikan masalah data integrity secara fundamental; untuk risiko medium (RabbitMQ tanpa DLQ, non-idempotent handlers), kami merancang solusi dengan effort rendah seperti konfigurasi Dead Letter Queue dan penambahan event ID tracking. Pendekatan ini mencerminkan trade-off antara biaya mitigasi dan tingkat risiko, serupa dengan negosiasi antara arsitek dan stakeholder yang digambarkan dalam Module 09 (ref: hal. 105) — kami tidak mencoba menyelesaikan semua risiko sekaligus, tetapi memprioritaskan berdasarkan risk score dan feasibility implementasi.
 
 ---
-## 🧑‍💻 Individual Works — Component & Code Diagrams (C4 Level 3 & 4)
+## 🧑‍💻 Individual Work — Tirta Rendy Siahaan (Achievement Service)
 
-> **Component Diagram** (C4 Level 3) — Scope: satu container. Menunjukkan komponen-komponen di dalam container, tanggung jawab masing-masing, dan detail teknologi/implementasi. Semua komponen di dalam satu container berjalan dalam *satu process space* dan bukan unit yang di-deploy terpisah.
+> **Component Diagram** (C4 Level 3) — Scope: Achievement Service container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
 >
-> **Code Diagram** (C4 Level 4) — Scope: satu komponen. Menunjukkan elemen kode (class, interface, entity) di dalam komponen tersebut menggunakan UML class diagram.
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing komponen. Menunjukkan class, interface, record, dan enum yang membentuk komponen tersebut.
 >
 > *(Ref: Module 09, hal. 119-120)*
 
 ---
 
----
-
-### 👤 Tirta Rendy Siahaan — Achievement Service (Port 8083)
-
-#### Component Diagram — Achievement Service
+### 📐 Component Diagram — Achievement Service (Port 8083)
 
 ```mermaid
 flowchart TD
-    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]"]
-    MQ["📨 RabbitMQ\n[Container: Message Broker]"]
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
     DB[("🗄️ Achievements DB\n[Container: H2 / PostgreSQL]")]
+    SHARED["📦 Shared Library\n[Library]\nEvent POJOs, JWT Filter"]
 
     subgraph ACHIEV["Achievement Service [Container: Spring Boot 3.x, Port 8083]"]
         direction TB
 
-        AC["🎯 AchievementController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk CRUD achievement\ndan melihat progres"]
+        CTRL["🎯 AchievementController\n[Component: Spring REST Controller]\n\nSingle controller yang meng-handle\nsemua endpoint achievement &\ndaily mission.\nPath: /api/achievements/**"]
 
-        MC["📋 DailyMissionController\n[Component: REST Controller]\n\nMeng-handle HTTP request\nuntuk daily mission,\nklaim reward"]
+        SVC_IF["⚙️ AchievementService\n[Component: Interface]\n\nKontrak bisnis: CRUD achievement,\nCRUD daily mission, record events,\nclaim reward, pin achievement,\nrotate daily missions"]
 
-        AS["⚙️ AchievementService\n[Component: Service]\n\nLogika bisnis: tracking\nprogres, trigger unlock,\ncek milestone"]
+        SVC_IMPL["⚙️ AchievementServiceImpl\n[Component: Service Implementation]\n\nImplementasi logika bisnis.\nMengelola progress tracking,\nidempotent event processing,\ndan publishing events ke RabbitMQ"]
 
-        MS["⚙️ DailyMissionService\n[Component: Service]\n\nLogika bisnis: rotasi\nmisi harian, cek\npenyelesaian, klaim reward"]
+        LISTENER["👂 ReadingCompletedListener\n[Component: RabbitMQ Listener]\n\nMendengarkan 5 event:\n- yomu.learning.completed\n- yomu.quiz.completed\n- yomu.league.activity\n- yomu.comment.created\n- yomu.clan.promoted"]
 
-        AR["💾 AchievementRepository\n[Component: JPA Repository]\n\nAkses data Achievement\ndan UserAchievement"]
+        REPO_IF["💾 AchievementRepository\n[Component: Repository Interface]\n\nKontrak akses data untuk\nachievements, daily missions,\nprogress tracking, dan\nactivity events"]
 
-        MR["💾 DailyMissionRepository\n[Component: JPA Repository]\n\nAkses data DailyMission\ndan UserMissionProgress"]
+        REPO_IMPL["💾 JdbcAchievementRepository\n[Component: JDBC Repository Implementation]\n\nImplementasi repository dengan\nJdbcTemplate. Mengelola 5 tabel:\nachievements, user_achievement_progress,\ndaily_missions, user_daily_mission_progress,\nachievement_activity_events"]
 
-        EL["👂 EventListener\n[Component: RabbitMQ Listener]\n\nMendengarkan event:\n- QuizCompletedEvent\n- ClanPromotedEvent\nuntuk trigger achievement"]
+        SCHEDULER["⏰ DailyMissionRotationScheduler\n[Component: Scheduled Task]\n\nRotasi daily mission otomatis\nsetiap tengah malam UTC.\nJuga berjalan saat startup."]
 
-        EP["📤 EventPublisher\n[Component: RabbitMQ Publisher]\n\nMempublish event:\n- AchievementUnlockedEvent\n- DailyMissionCompletedEvent"]
+        SEC["🔒 AchievementsSecurityConfig\n[Component: Security Configuration]\n\nKonfigurasi Spring Security:\nendpoint admin memerlukan ROLE_ADMIN,\nsemua request lain harus authenticated.\nMenggunakan JwtAuthenticationFilter\ndari shared-lib."]
     end
 
-    GW -->|"/api/achievements/**\n[HTTP]"| AC
-    GW -->|"/api/missions/**\n[HTTP]"| MC
+    %% External → Controller
+    GW -->|"HTTP requests\n/api/achievements/**"| CTRL
 
-    AC --> AS
-    MC --> MS
+    %% Controller → Service
+    CTRL --> SVC_IF
 
-    AS --> AR
-    AS --> EP
-    MS --> MR
-    MS --> EP
+    %% Interface → Implementation
+    SVC_IF -.->|"implements"| SVC_IMPL
 
-    EL -.->|"Subscribes\n[AMQP]"| MQ
-    EP -.->|"Publishes\n[AMQP]"| MQ
-    EL --> AS
-    EL --> MS
+    %% Listener → Service
+    LISTENER --> SVC_IF
 
-    AR -->|"JDBC"| DB
-    MR -->|"JDBC"| DB
+    %% Scheduler → Service
+    SCHEDULER --> SVC_IF
 
-    style AC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style AS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MS fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style AR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style MR fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style EL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style EP fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    %% Service → Repository
+    SVC_IMPL --> REPO_IF
+
+    %% Service → RabbitMQ (publish)
+    SVC_IMPL -.->|"Publishes via RabbitTemplate:\nyomu.achievement.unlocked\nyomu.daily.mission.completed\n[AMQP]"| MQ
+
+    %% Repository Interface → Implementation
+    REPO_IF -.->|"implements"| REPO_IMPL
+
+    %% Repository → Database
+    REPO_IMPL -->|"JdbcTemplate\n[JDBC]"| DB
+
+    %% Listener ← RabbitMQ (subscribe)
+    MQ -.->|"Subscribes:\n5 queues via\n@RabbitListener\n[AMQP]"| LISTENER
+
+    %% Shared lib
+    SHARED -.->|"JwtAuthenticationFilter\nEvent POJOs"| SEC
+    SHARED -.->|"Event record types"| LISTENER
+
+    %% Styling
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style LISTENER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SCHEDULER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
     style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
     style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
 ```
 
-#### Code Diagram 1 — Achievement Domain Model
+---
+
+### 📐 Code Diagram 1 — Domain Model (Records & Enum)
+
+Menunjukkan elemen kode di dalam komponen model: semua menggunakan Java `record` (immutable data class) dan satu `enum`.
 
 ```mermaid
 classDiagram
     class Achievement {
-        -Long id
-        -String name
-        -String description
-        -String iconUrl
-        -AchievementType type
-        -int milestone
-        -boolean active
-        +getId() Long
-        +getName() String
-        +getMilestone() int
+        <<record>>
+        UUID id
+        String code
+        String name
+        String description
+        AchievementMetric metric
+        int milestone
+        boolean active
+        Instant createdAt
     }
 
-    class UserAchievement {
-        -Long id
-        -Long userId
-        -Achievement achievement
-        -int currentProgress
-        -boolean unlocked
-        -LocalDateTime unlockedAt
-        +isUnlocked() boolean
-        +incrementProgress(int amount) void
-        +unlock() void
-    }
-
-    class AchievementType {
+    class AchievementMetric {
         <<enumeration>>
-        READING_COUNT
-        QUIZ_SCORE
-        CLAN_TIER
-        FORUM_ACTIVITY
-        DAILY_STREAK
+        READING_COMPLETED
+        QUIZ_COMPLETED
+        LEAGUE_ACTIVITY
+        COMMENT_CREATED
+        CLAN_PROMOTED
+        CLAN_REACHED_DIAMOND
     }
 
-    Achievement "1" --> "0..*" UserAchievement : tracked by
-    Achievement --> AchievementType : categorized as
-```
+    class AchievementProgress {
+        <<record>>
+        Achievement achievement
+        int progressCount
+        Instant unlockedAt
+        boolean isPinned
+        +unlocked() boolean
+    }
 
-#### Code Diagram 2 — Daily Mission Domain Model
+    class AchievementProgressState {
+        <<record>>
+        int progressCount
+        Instant unlockedAt
+        boolean isPinned
+    }
 
-```mermaid
-classDiagram
     class DailyMission {
-        -Long id
-        -String title
-        -String description
-        -MissionType missionType
-        -int targetValue
-        -int rewardPoints
-        -LocalDate activeDate
-        -boolean active
-        +isActiveToday() boolean
-        +getTargetValue() int
+        <<record>>
+        UUID id
+        String code
+        String name
+        String description
+        AchievementMetric metric
+        int targetCount
+        int rewardPoints
+        LocalDate activeFrom
+        LocalDate activeUntil
+        Instant createdAt
     }
 
-    class UserMissionProgress {
-        -Long id
-        -Long userId
-        -DailyMission mission
-        -int currentValue
-        -boolean completed
-        -boolean rewardClaimed
-        -LocalDate progressDate
-        +isCompleted() boolean
-        +incrementProgress(int amount) void
-        +claimReward() boolean
+    class DailyMissionProgress {
+        <<record>>
+        DailyMission mission
+        int progressCount
+        Instant claimedAt
+        +completed() boolean
+        +claimed() boolean
     }
 
-    class MissionType {
-        <<enumeration>>
-        READ_ARTICLES
-        COMPLETE_QUIZZES
-        POST_COMMENTS
-        EARN_ACHIEVEMENT
+    class DailyMissionProgressState {
+        <<record>>
+        int progressCount
+        Instant claimedAt
     }
 
-    class DailyMissionScheduler {
-        -DailyMissionRepository missionRepo
-        +rotateDaily() void
-        +deactivateExpired() void
-    }
-
-    DailyMission "1" --> "0..*" UserMissionProgress : tracked by
-    DailyMission --> MissionType : categorized as
-    DailyMissionScheduler --> DailyMission : manages
+    Achievement --> AchievementMetric : metric
+    AchievementProgress --> Achievement : achievement
+    DailyMission --> AchievementMetric : metric
+    DailyMissionProgress --> DailyMission : mission
 ```
 
-#### Code Diagram 3 — Achievement Event Listener
+---
+
+### 📐 Code Diagram 2 — Service Layer (Interface + Implementation)
+
+Menunjukkan kontrak `AchievementService` dan implementasinya `AchievementServiceImpl`, beserta dependency-nya.
 
 ```mermaid
 classDiagram
-    class AchievementEventListener {
-        -AchievementService achievementService
-        -DailyMissionService missionService
-        +handleQuizCompleted(QuizCompletedEvent event) void
-        +handleClanPromoted(ClanPromotedEvent event) void
+    class AchievementService {
+        <<interface>>
+        +createAchievement(CreateAchievementRequest) AchievementResponse
+        +listAchievementProgress(UUID userId) List~AchievementProgressResponse~
+        +createDailyMission(CreateDailyMissionRequest) DailyMissionResponse
+        +listActiveDailyMissions(UUID userId) List~DailyMissionProgressResponse~
+        +claimDailyMissionReward(UUID missionId, UUID userId) ClaimRewardResponse
+        +pinAchievement(UUID userId, UUID achievementId, boolean pin) void
+        +recordReadingCompleted(LearningCompletedEvent) void
+        +recordQuizCompleted(QuizCompletedEvent) void
+        +recordLeagueActivity(LeagueActivityEvent) void
+        +recordCommentCreated(CommentCreatedEvent) void
+        +recordClanPromoted(ClanPromotedEvent) void
+        +rotateDailyMissions() void
     }
 
-    class AchievementEventPublisher {
+    class AchievementServiceImpl {
+        -AchievementRepository repository
         -RabbitTemplate rabbitTemplate
-        +publishAchievementUnlocked(AchievementUnlockedEvent event) void
-        +publishDailyMissionCompleted(DailyMissionCompletedEvent event) void
+        -int DEFAULT_DAILY_MISSION_REWARD = 10
+        +createAchievement(CreateAchievementRequest) AchievementResponse
+        +listAchievementProgress(UUID) List~AchievementProgressResponse~
+        +createDailyMission(CreateDailyMissionRequest) DailyMissionResponse
+        +listActiveDailyMissions(UUID) List~DailyMissionProgressResponse~
+        +claimDailyMissionReward(UUID, UUID) ClaimRewardResponse
+        +pinAchievement(UUID, UUID, boolean) void
+        +recordReadingCompleted(LearningCompletedEvent) void
+        +recordQuizCompleted(QuizCompletedEvent) void
+        +recordLeagueActivity(LeagueActivityEvent) void
+        +recordCommentCreated(CommentCreatedEvent) void
+        +recordClanPromoted(ClanPromotedEvent) void
+        +rotateDailyMissions() void
+        -updateAchievementAndMissionProgress(UUID userId, AchievementMetric metric) void
+        -resolveCode(String providedCode, String fallbackName) String
+        -requireMetric(AchievementMetric) AchievementMetric
+        -toResponse(Achievement) AchievementResponse
+        -toProgressResponse(AchievementProgress) AchievementProgressResponse
+        -toMissionResponse(DailyMission) DailyMissionResponse
+        -toMissionProgressResponse(DailyMissionProgress) DailyMissionProgressResponse
+    }
+
+    class AchievementRepository {
+        <<interface>>
+        +saveAchievement(Achievement) Achievement
+        +existsByAchievementCode(String) boolean
+        +findActiveAchievementsByMetric(AchievementMetric) List~Achievement~
+        +findAchievementProgressForUser(UUID) List~AchievementProgress~
+        +findAchievementProgressState(UUID, UUID) Optional~AchievementProgressState~
+        +saveAchievementProgress(UUID, UUID, int, Instant) void
+        +pinAchievement(UUID, UUID, boolean) void
+        +saveDailyMission(DailyMission) DailyMission
+        +existsByDailyMissionCode(String) boolean
+        +findDailyMissionById(UUID) Optional~DailyMission~
+        +findActiveDailyMissionsByMetric(AchievementMetric, LocalDate) List~DailyMission~
+        +findActiveDailyMissionProgressForUser(UUID, LocalDate) List~DailyMissionProgress~
+        +hasActiveDailyMissionOn(LocalDate) boolean
+        +findDailyMissionProgressState(UUID, UUID) Optional~DailyMissionProgressState~
+        +saveDailyMissionProgress(UUID, UUID, int, Instant) void
+        +saveActivityEvent(UUID, AchievementMetric, String, Instant) boolean
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    AchievementService <|.. AchievementServiceImpl : implements
+    AchievementServiceImpl --> AchievementRepository : repository
+    AchievementServiceImpl --> RabbitTemplate : rabbitTemplate
+```
+
+---
+
+### 📐 Code Diagram 3 — Event Listener, Scheduler & Shared Events
+
+Menunjukkan `ReadingCompletedListener` yang mengkonsumsi event dari service lain, `DailyMissionRotationScheduler` yang menjalankan rotasi otomatis, serta event objects dari shared-lib.
+
+```mermaid
+classDiagram
+    class ReadingCompletedListener {
+        -AchievementService achievementService
+        +onLearningCompleted(LearningCompletedEvent) void
+        +onQuizCompleted(QuizCompletedEvent) void
+        +onLeagueActivity(LeagueActivityEvent) void
+        +onCommentCreated(CommentCreatedEvent) void
+        +onClanPromoted(ClanPromotedEvent) void
+    }
+    note for ReadingCompletedListener "Setiap method di-annotasi dengan\n@RabbitListener yang bind ke\nqueue dan routing key masing-masing\npada exchange yomu.events (topic)"
+
+    class DailyMissionRotationScheduler {
+        -AchievementService achievementService
+        +ensureDailyMissionOnStartup() void
+        +rotateDailyMissionAtMidnight() void
+    }
+    note for DailyMissionRotationScheduler "@EventListener(ApplicationReadyEvent)\n@Scheduled(cron='0 0 0 * * *', zone='UTC')"
+
+    class LearningCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID bacaanId
+        Instant occurredAt
     }
 
     class QuizCompletedEvent {
-        -Long userId
-        -Long quizId
-        -int score
-        -int totalQuestions
-        -LocalDateTime completedAt
+        <<record / shared-lib>>
+        UUID userId
+        UUID quizId
+        Instant occurredAt
+    }
+
+    class LeagueActivityEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID activityId
+        Instant occurredAt
+    }
+
+    class CommentCreatedEvent {
+        <<record / shared-lib>>
+        String userId
+        String commentId
+        Instant timestamp
+    }
+
+    class ClanPromotedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID clanId
+        UUID seasonId
+        String newTier
+        Instant occurredAt
     }
 
     class AchievementUnlockedEvent {
-        -Long userId
-        -Long achievementId
-        -String achievementName
-        -LocalDateTime unlockedAt
+        <<record / shared-lib>>
+        UUID userId
+        String achievementCode
+        String achievementName
+        Instant unlockedAt
     }
 
     class DailyMissionCompletedEvent {
-        -Long userId
-        -Long missionId
-        -int rewardPoints
-        -LocalDateTime completedAt
+        <<record / shared-lib>>
+        UUID userId
+        UUID missionId
+        String missionName
+        Instant completedAt
     }
 
-    AchievementEventListener ..> QuizCompletedEvent : consumes
-    AchievementEventListener --> AchievementService : delegates to
-    AchievementEventPublisher ..> AchievementUnlockedEvent : publishes
-    AchievementEventPublisher ..> DailyMissionCompletedEvent : publishes
+    ReadingCompletedListener ..> LearningCompletedEvent : consumes
+    ReadingCompletedListener ..> QuizCompletedEvent : consumes
+    ReadingCompletedListener ..> LeagueActivityEvent : consumes
+    ReadingCompletedListener ..> CommentCreatedEvent : consumes
+    ReadingCompletedListener ..> ClanPromotedEvent : consumes
+    ReadingCompletedListener --> AchievementService : delegates to
+
+    DailyMissionRotationScheduler --> AchievementService : delegates to
+
+    AchievementServiceImpl ..> AchievementUnlockedEvent : publishes
+    AchievementServiceImpl ..> DailyMissionCompletedEvent : publishes
 ```
 
 ---
 
----
 *Dibuat oleh Tim Yomu — Kelompok A15, Advanced Programming 2026*
 *Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)*
