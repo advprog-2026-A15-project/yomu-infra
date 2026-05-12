@@ -1,24 +1,28 @@
 # Contracts
 
-Dokumen di folder ini mendefinisikan kontrak antar modul pada modular monolith `yomu`.
+Dokumen di folder ini mendefinisikan kontrak antar service pada arsitektur microservice `yomu`.
 
 Aturan umum:
 
-- Event publik ditempatkan di package modul yang tidak memakai `internal`.
+- Event publik ditempatkan di `shared-lib` package `id.ac.ui.cs.advprog.yomu.shared.event`.
 - Kontrak dianggap stabil dan versioning dilakukan secara additive.
-- Consumer antar modul hanya boleh bergantung pada field yang terdokumentasi di sini.
+- Consumer antar service hanya boleh bergantung pada field yang terdokumentasi di sini.
 - Perubahan breaking harus disertai version baru atau strategi migrasi yang jelas.
+- Event AMQP dikirim melalui topic exchange `yomu.events`.
 
 ## Event Contracts
 
-- `auth.UserRegisteredEvent`
-- `learning.LearningCompletedEvent`
-- `learning.QuizCompletedEvent`
-- `clan.LeagueActivityEvent`
-- `achievements.AchievementUnlockedEvent`
-- `forum.CommentCreatedEvent`
-- `forum.CommentUpdatedEvent`
-- `forum.CommentDeletedEvent`
+- `UserRegisteredEvent`
+- `LearningCompletedEvent`
+- `QuizCompletedEvent`
+- `LeagueActivityEvent`
+- `AchievementUnlockedEvent`
+- `DailyMissionCompletedEvent`
+- `ClanPromotedEvent`
+- `ClanDemotedEvent`
+- `CommentCreatedEvent`
+- `CommentUpdatedEvent`
+- `CommentDeletedEvent`
 
 ## HTTP API Contracts
 

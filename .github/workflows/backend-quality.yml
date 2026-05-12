@@ -3,23 +3,28 @@ name: Backend Quality
 on:
   pull_request:
     paths:
-      - "backend/**"
+      - "api-gateway/**"
+      - "service-*/**"
+      - "shared-lib/**"
+      - "docker-compose.yml"
+      - "clone-repositories.sh"
       - ".github/workflows/backend-quality.yml"
   push:
     branches:
       - main
       - staging
     paths:
-      - "backend/**"
+      - "api-gateway/**"
+      - "service-*/**"
+      - "shared-lib/**"
+      - "docker-compose.yml"
+      - "clone-repositories.sh"
       - ".github/workflows/backend-quality.yml"
   workflow_dispatch:
 
 jobs:
   quality:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - uses: actions/checkout@v4
@@ -31,4 +36,18 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - run: ./gradlew build
+      - name: Clone service repositories when running from infra repo
+        run: |
+          chmod +x ./clone-repositories.sh
+          ./clone-repositories.sh
+
+      - name: Publish shared library locally
+        working-directory: shared-lib
+        run: ./gradlew publishToMavenLocal --no-daemon
+
+      - name: Build backend services
+        run: |
+          for service in api-gateway service-auth service-learning service-achievements service-forum service-clan; do
+            echo "Building ${service}"
+            (cd "${service}" && ./gradlew build --no-daemon)
+          done
