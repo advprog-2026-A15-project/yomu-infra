@@ -1,138 +1,184 @@
-# Yomu App - Sistem Literasi Berbasis Gamifikasi (Microservices)
+# 📖 Yomu App - Gamified Literacy Platform
+### *Melatih Literasi dengan Pengalaman Belajar yang Menyenangkan*
 
-Yomu adalah platform aplikasi pembelajaran (gamifikasi) yang membantu masyarakat Indonesia dalam melatih kebiasaan verifikasi dan membaca saksama. Proyek ini diimplementasikan menggunakan arsitektur **Microservices** dengan pola **Monorepo** (Gradle Multi-project) di sisi Backend, dan arsitektur Features-based menggunakan React (Vite) di sisi Frontend.
+Yomu adalah platform aplikasi pembelajaran berbasis gamifikasi yang dirancang untuk membantu masyarakat Indonesia membangun kebiasaan membaca saksama dan verifikasi informasi. Proyek ini menggunakan arsitektur **Microservices Polyrepo** yang modern, skalabel, dan tangguh.
 
-## 🏗️ Perubahan Arsitektur & Implementasi Terbaru
+---
 
-1. **Migrasi Penuh ke Microservices**: Aplikasi yang sebelumnya monolitik atau setengah jalan telah dipecah secara rapi menjadi service independen:
-    - `api-gateway` (Port 8080): Melakukan routing request dari frontend ke service terkait.
-    - `service-auth` (Port 8081): Mengurus registrasi, login, dan validasi JWT.
-    - `service-learning` (Port 8082): Menangani CRUD Bacaan dan pengerjaan Kuis.
-    - `service-achievements` (Port 8083): Menangani sistem pencapaian (Achievements) dan Misi Harian.
-    - `service-forum` (Port 8084): Diskusi publik bersarang (nested comments).
-    - `service-clan` (Port 8085): Sistem liga dengan Strategy Pattern untuk scoring yang berbeda tiap Tier (Bronze, Silver, Gold, Diamond).
-    - `shared-lib`: Menyimpan DTO, Security configurations (JWT Filters), dan Event objects.
+## 🏗️ Arsitektur Sistem
 
-2. **Pola Desain (Design Patterns) & SOLID**:
-    - **Single Responsibility Principle (SRP)**: Setiap Service hanya mengurusi domainnya masing-masing.
-    - **Open/Closed Principle (OCP) & Strategy Pattern**: Diterapkan secara nyata pada sistem _Scoring Liga_ di `service-clan` (`BronzeScoringStrategy`, `SilverScoringStrategy`, dst). Menambah Tier baru tidak akan merusak sistem yang ada.
-    - **Event-Driven Communication**: Komunikasi antar microservice menggunakan sistem Event (`LearningCompletedEvent`, dsb).
+Yomu mengadopsi arsitektur microservices yang terdesentralisasi, di mana setiap layanan memiliki tanggung jawab tunggal (Single Responsibility) dan basis data sendiri.
 
-3. **Peningkatan Frontend (Gamifikasi)**:
-    - Mengimplementasikan desain antarmuka bergaya _gamified_ (seperti platform populer Duolingo).
-    - Menggunakan tombol dengan aksen bayangan tebal, tipografi tegas (Nunito), dan kartu (cards) dengan interaksi dinamis.
-    - Halaman **Learning/Modul Belajar** yang interaktif (transisi mode Membaca -> Kuis -> Selesai).
-    - Papan Peringkat (**Leaderboard Liga**) yang dapat disaring berdasarkan Divisi/Tier.
+### 🧩 Diagram Arsitektur
 
-## 🚀 Panduan Deployment (Menjalankan Proyek Lokal)
+![Yomu Architecture Diagram](docs/images/architecture.png)
 
-### Persyaratan Sistem
+<details>
+<summary>📐 Lihat Versi Mermaid (Jika didukung oleh Viewer Anda)</summary>
 
-- Java 21 (JDK)
-- Node.js (v18 atau lebih tinggi)
-- Git
+```mermaid
+flowchart TD
+    %% Nodes
+    FE("React Frontend")
+    GW{Spring Cloud Gateway}
+    
+    Auth["Auth Service"]
+    Learning["Learning Service"]
+    Achievements["Achievements Service"]
+    Forum["Forum Service"]
+    Clan["Clan Service"]
+    
+    MQ[["RabbitMQ (Event Bus)"]]
+    
+    DB_A[("H2 Auth DB")]
+    DB_L[("H2 Learning DB")]
+    DB_Ac[("H2 Achievements DB")]
+    DB_F[("H2 Forum DB")]
+    DB_C[("H2 Clan DB")]
 
-### Mengunduh Semua Repositori
+    %% Connections
+    FE ==>|HTTP/REST| GW
+    
+    GW --> Auth
+    GW --> Learning
+    GW --> Achievements
+    GW --> Forum
+    GW --> Clan
+    
+    %% Events
+    Learning -.->|Publish| MQ
+    Achievements -.->|Publish| MQ
+    MQ -.->|Subscribe| Clan
+    
+    %% Persistence
+    Auth --- DB_A
+    Learning --- DB_L
+    Achievements --- DB_Ac
+    Forum --- DB_F
+    Clan --- DB_C
 
-Proyek ini sekarang terdiri dari beberapa repository terpisah. Untuk mempermudah pengunduhan semua repositori, tersedia skrip otomasi di root proyek:
-
-- `clone-repositories.bat` — skrip untuk Windows (CMD/PowerShell).
-- `clone-repositories.sh` — skrip untuk macOS / Linux (bash).
-
-Contoh penggunaan (dry-run, hanya menampilkan tindakan):
-
-```bash
-./clone-repositories.sh --dry-run
+    %% Styling
+    style GW fill:#f9f,stroke:#333,stroke-width:2px
+    style MQ fill:#ff9,stroke:#333,stroke-width:2px
+    style FE fill:#61dafb,stroke:#333
 ```
 
-Contoh penggunaan penuh dan menarik perubahan untuk repositori yang sudah ada:
+</details>
 
-```bash
-./clone-repositories.sh /path/to/target --pull
-clone-repositories.bat C:\path\to\target --pull
-```
+---
 
-Skrip akan mengkloning repositori berikut ke folder dengan nama yang sama:
+## 🚀 Komponen Utama
 
-- `api-gateway`
-- `frontend`
-- `service-achievements`
-- `service-auth`
-- `service-clan`
-- `service-forum`
-- `service-learning`
-- `shared-lib`
+### 1. 🌐 API Gateway (Port 8090)
+Bertindak sebagai *Single Entry Point*. Menggunakan **Spring Cloud Gateway** untuk:
+- **Routing**: Mengarahkan permintaan dari Frontend ke service yang tepat.
+- **Authentication Filter**: Melakukan validasi awal JWT (Security Bypass dapat diaktifkan via environment).
+- **Reactive Stack**: Dibangun di atas Spring WebFlux untuk performa tinggi.
 
-Jika Anda sudah berada di folder root proyek (`yomu-infra`), cukup jalankan skrip tanpa argumen.
+### 2. 🔐 Auth Service (Port 8081)
+Pusat keamanan aplikasi. Fitur utama:
+- Registrasi & Login (JWT Based).
+- Dukungan Google SSO.
+- **Rate Limiting**: Melindungi endpoint sensitif dari brute force.
+- RBAC (Role-Based Access Control).
 
-### Opsi: Menjalankan Menggunakan Docker Compose (Recommended untuk Isolasi & Kemudahan)
+### 3. 📚 Learning Service (Port 8082)
+Inti dari konten edukasi:
+- Manajemen Modul Bacaan.
+- Sistem Kuis Interaktif.
+- Publisher Event: Mengirimkan `QuizCompletedEvent` saat user menyelesaikan kuis.
 
-Jika Anda ingin menjalankan seluruh arsitektur secara terisolasi dengan container, tersedia file `docker-compose.yml` di root proyek.
+### 4. 🏆 Achievements Service (Port 8083)
+Mengelola sistem gamifikasi:
+- Tracking Pencapaian (Badges/Medals).
+- Misi Harian (Daily Missions).
+- Publisher Event: Mengirimkan `AchievementUnlockedEvent` dan `DailyMissionCompletedEvent`.
 
-- Persyaratan: `Docker` + `Docker Compose` (atau Docker Desktop yang sudah include compose plugin).
-- Pastikan semua repositori service sudah ada di folder root (lihat skrip `clone-repositories.*`) atau sesuaikan `docker-compose.yml` jika Anda menaruh source di lokasi lain.
+### 5. 💬 Forum Service (Port 8084)
+Ruang diskusi komunitas:
+- Thread-based discussions.
+- Nested Comments (Komentar bersarang).
+- Repositori berbasis JDBC untuk efisiensi query diskusi.
 
-Langkah singkat:
+### 6. 🛡️ Clan Service (Port 8085)
+Sistem kompetisi antar pengguna:
+- **Strategy Pattern**: Implementasi sistem skor yang berbeda untuk setiap Tier (Bronze, Silver, Gold, Diamond).
+- **Event Listener**: Mengonsumsi event dari `Learning` dan `Achievements` untuk mengupdate peringkat user secara real-time.
 
-```bash
-# Dari folder root repository (yomu-infra)
-docker compose up --build
-# atau jika menggunakan docker-compose lama:
-docker-compose up --build
-```
+### 📦 Shared Library (`shared-lib`)
+Komponen yang digunakan secara bersamaan oleh semua service untuk menjaga konsistensi:
+- **Security**: JWT Service & Filters.
+- **Events**: Definisi objek event (POJO) untuk RabbitMQ.
+- **Exception Handling**: Global exception handler & standard error responses.
 
-- Untuk frontend:
+---
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## 🛠️ Technology Stack
 
-- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8080`.
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, Tailwind CSS, Lucide Icons |
+| **Backend** | Java 21, Spring Boot 3.x, Spring Cloud Gateway |
+| **Messaging** | RabbitMQ (Topic Exchange) |
+| **Persistence** | H2 Database (PostgreSQL Mode) |
+| **Security** | Spring Security, JSON Web Token (JWT) |
+| **DevOps** | Docker, Docker Compose |
+| **Build Tool** | Gradle (Kotlin DSL) |
 
-Penjelasan singkat:
+---
 
-- Perintah ini akan membangun image untuk setiap service menggunakan masing-masing `Dockerfile` dan menjalankan container dalam satu network.
-- Pastikan `gradlew` memiliki permission executable (sudah di-set dalam repo: `git update-index --chmod=+x gradlew`).
-- Folder `docs/` tetap utuh dan tidak diubah oleh skrip-kloning atau proses ini.
+## 📡 Komunikasi Antar Service
 
-### Menjalankan Layanan Secara Manual (Native Spring Boot)
+### 🔄 Synchronous (REST)
+Digunakan untuk komunikasi dari Frontend melalui API Gateway.
+- Format: `JSON` over `HTTP`.
+- Endpoint: `/api/auth/**`, `/api/learning/**`, dll.
 
-Untuk debugging atau pengembangan lokal tiap service, jalankan setiap service dari foldernya masing-masing.
+### ⚡ Asynchronous (Event-Driven)
+Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
+- **Exchange**: `yomu.events` (Topic)
+- **Routing Keys**:
+    - `yomu.quiz.completed`: Dipicu oleh Learning Service.
+    - `yomu.achievement.unlocked`: Dipicu oleh Achievements Service.
+    - `yomu.daily.mission.completed`: Dipicu oleh Achievements Service.
 
-Contoh menjalankan `service-auth` dari PowerShell / bash:
+---
 
-```bash
-cd service-auth
-./gradlew bootRun   # Windows: gradlew.bat bootRun
-```
+## 📦 Panduan Menjalankan Proyek
 
-Jalankan setiap service di terminal terpisah:
+### 🐳 Menggunakan Docker Compose (Direkomendasikan)
+Cara tercepat untuk menjalankan seluruh ekosistem Yomu:
 
-```bash
-cd api-gateway && ./gradlew bootRun &
-cd service-auth && ./gradlew bootRun &
-cd service-learning && ./gradlew bootRun &
-cd service-achievements && ./gradlew bootRun &
-cd service-forum && ./gradlew bootRun &
-cd service-clan && ./gradlew bootRun &
-```
+1. Pastikan semua repositori microservice berada dalam satu folder root.
+2. Jalankan perintah:
+   ```bash
+   docker compose up --build
+   ```
+3. Akses:
+    - **Frontend**: `http://localhost:5173`
+    - **API Gateway**: `http://localhost:8090`
+    - **RabbitMQ Dashboard**: `http://localhost:15672` (guest/guest)
 
-Keterangan:
+### 🛠️ Menjalankan Secara Manual
+Jika ingin menjalankan service tertentu untuk pengembangan:
+1. Pastikan RabbitMQ sudah berjalan.
+2. Masuk ke folder service (misal `service-auth`):
+   ```bash
+   ./gradlew bootRun
+   ```
+3. Untuk Frontend:
+   ```bash
+   cd frontend && npm install && npm run dev
+   ```
 
-- Gunakan `gradlew.bat` di Windows jika `./gradlew` tidak berjalan.
-- Database default adalah H2 (file-based) yang disimpan di folder per-service jika dikonfigurasi — periksa `application.properties`/`application.yml` di masing-masing service untuk lokasi file H2.
-- Untuk frontend:
+---
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## 🛡️ Prinsip Desain & SOLID
+Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
+- **Single Responsibility (SRP)**: Setiap microservice menangani satu domain bisnis yang jelas.
+- **Open/Closed (OCP)**: Sistem scoring di `service-clan` menggunakan Strategy Pattern, memungkinkan penambahan Tier baru tanpa mengubah logika inti.
+- **Dependency Inversion (DIP)**: Penggunaan shared interfaces untuk event handling.
+- **Loose Coupling**: Antar service tidak saling bergantung secara langsung (Sync), melainkan melalui Event Bus (Async).
 
-- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8080`.
-
-## 🔐 Keamanan
-
-Sistem menggunakan **JSON Web Token (JWT)**. Setiap request dari frontend ke backend (melalui Gateway) akan divalidasi keabsahan tokennya oleh `JwtAuthenticationFilter` yang berada di dalam `shared-lib` dan diimpor oleh setiap service secara terpisah untuk memvalidasi otorisasi.
+---
+*Dibuat dengan ❤️ oleh Tim Yomu*
