@@ -1,5 +1,6 @@
 # 📖 Yomu App - Gamified Literacy Platform
-### *Melatih Literasi dengan Pengalaman Belajar yang Menyenangkan*
+
+### _Melatih Literasi dengan Pengalaman Belajar yang Menyenangkan_
 
 Yomu adalah platform aplikasi pembelajaran berbasis gamifikasi yang dirancang untuk membantu masyarakat Indonesia membangun kebiasaan membaca saksama dan verifikasi informasi. Proyek ini menggunakan arsitektur **Microservices Polyrepo** yang modern, skalabel, dan tangguh.
 
@@ -21,15 +22,15 @@ flowchart TD
     %% Nodes
     FE("React Frontend")
     GW{Spring Cloud Gateway}
-    
+
     Auth["Auth Service"]
     Learning["Learning Service"]
     Achievements["Achievements Service"]
     Forum["Forum Service"]
     Clan["Clan Service"]
-    
+
     MQ[["RabbitMQ (Event Bus)"]]
-    
+
     DB_A[("H2 Auth DB")]
     DB_L[("H2 Learning DB")]
     DB_Ac[("H2 Achievements DB")]
@@ -38,18 +39,18 @@ flowchart TD
 
     %% Connections
     FE ==>|HTTP/REST| GW
-    
+
     GW --> Auth
     GW --> Learning
     GW --> Achievements
     GW --> Forum
     GW --> Clan
-    
+
     %% Events
     Learning -.->|Publish| MQ
     Achievements -.->|Publish| MQ
     MQ -.->|Subscribe| Clan
-    
+
     %% Persistence
     Auth --- DB_A
     Learning --- DB_L
@@ -70,43 +71,57 @@ flowchart TD
 ## 🚀 Komponen Utama
 
 ### 1. 🌐 API Gateway (Port 8090)
-Bertindak sebagai *Single Entry Point*. Menggunakan **Spring Cloud Gateway** untuk:
+
+Bertindak sebagai _Single Entry Point_. Menggunakan **Spring Cloud Gateway** untuk:
+
 - **Routing**: Mengarahkan permintaan dari Frontend ke service yang tepat.
 - **Authentication Filter**: Melakukan validasi awal JWT (Security Bypass dapat diaktifkan via environment).
 - **Reactive Stack**: Dibangun di atas Spring WebFlux untuk performa tinggi.
 
 ### 2. 🔐 Auth Service (Port 8081)
+
 Pusat keamanan aplikasi. Fitur utama:
+
 - Registrasi & Login (JWT Based).
 - Dukungan Google SSO.
 - **Rate Limiting**: Melindungi endpoint sensitif dari brute force.
 - RBAC (Role-Based Access Control).
 
 ### 3. 📚 Learning Service (Port 8082)
+
 Inti dari konten edukasi:
+
 - Manajemen Modul Bacaan.
 - Sistem Kuis Interaktif.
 - Publisher Event: Mengirimkan `QuizCompletedEvent` saat user menyelesaikan kuis.
 
 ### 4. 🏆 Achievements Service (Port 8083)
+
 Mengelola sistem gamifikasi:
+
 - Tracking Pencapaian (Badges/Medals).
 - Misi Harian (Daily Missions).
 - Publisher Event: Mengirimkan `AchievementUnlockedEvent` dan `DailyMissionCompletedEvent`.
 
 ### 5. 💬 Forum Service (Port 8084)
+
 Ruang diskusi komunitas:
+
 - Thread-based discussions.
 - Nested Comments (Komentar bersarang).
 - Repositori berbasis JDBC untuk efisiensi query diskusi.
 
 ### 6. 🛡️ Clan Service (Port 8085)
+
 Sistem kompetisi antar pengguna:
+
 - **Strategy Pattern**: Implementasi sistem skor yang berbeda untuk setiap Tier (Bronze, Silver, Gold, Diamond).
 - **Event Listener**: Mengonsumsi event dari `Learning` dan `Achievements` untuk mengupdate peringkat user secara real-time.
 
 ### 📦 Shared Library (`shared-lib`)
+
 Komponen yang digunakan secara bersamaan oleh semua service untuk menjaga konsistensi:
+
 - **Security**: JWT Service & Filters.
 - **Events**: Definisi objek event (POJO) untuk RabbitMQ.
 - **Exception Handling**: Global exception handler & standard error responses.
@@ -115,27 +130,31 @@ Komponen yang digunakan secara bersamaan oleh semua service untuk menjaga konsis
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS, Lucide Icons |
-| **Backend** | Java 21, Spring Boot 3.x, Spring Cloud Gateway |
-| **Messaging** | RabbitMQ (Topic Exchange) |
-| **Persistence** | H2 Database (PostgreSQL Mode) |
-| **Security** | Spring Security, JSON Web Token (JWT) |
-| **DevOps** | Docker, Docker Compose |
-| **Build Tool** | Gradle (Kotlin DSL) |
+| Layer           | Technologies                                   |
+| :-------------- | :--------------------------------------------- |
+| **Frontend**    | React 19, Vite, Tailwind CSS, Lucide Icons     |
+| **Backend**     | Java 21, Spring Boot 3.x, Spring Cloud Gateway |
+| **Messaging**   | RabbitMQ (Topic Exchange)                      |
+| **Persistence** | H2 Database (PostgreSQL Mode)                  |
+| **Security**    | Spring Security, JSON Web Token (JWT)          |
+| **DevOps**      | Docker, Docker Compose                         |
+| **Build Tool**  | Gradle (Kotlin DSL)                            |
 
 ---
 
 ## 📡 Komunikasi Antar Service
 
 ### 🔄 Synchronous (REST)
+
 Digunakan untuk komunikasi dari Frontend melalui API Gateway.
+
 - Format: `JSON` over `HTTP`.
 - Endpoint: `/api/auth/**`, `/api/learning/**`, dll.
 
 ### ⚡ Asynchronous (Event-Driven)
+
 Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
+
 - **Exchange**: `yomu.events` (Topic)
 - **Routing Keys**:
     - `yomu.quiz.completed`: Dipicu oleh Learning Service.
@@ -147,34 +166,39 @@ Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
 ## 📦 Panduan Menjalankan Proyek
 
 ### 🐳 Menggunakan Docker Compose (Direkomendasikan)
+
 Cara tercepat untuk menjalankan seluruh ekosistem Yomu:
 
 1. Pastikan semua repositori microservice berada dalam satu folder root.
 2. Jalankan perintah:
-   ```bash
-   docker compose up --build
-   ```
+    ```bash
+    docker compose up --build
+    ```
 3. Akses:
     - **Frontend**: `http://localhost:5173`
     - **API Gateway**: `http://localhost:8090`
     - **RabbitMQ Dashboard**: `http://localhost:15672` (guest/guest)
 
 ### 🛠️ Menjalankan Secara Manual
+
 Jika ingin menjalankan service tertentu untuk pengembangan:
+
 1. Pastikan RabbitMQ sudah berjalan.
 2. Masuk ke folder service (misal `service-auth`):
-   ```bash
-   ./gradlew bootRun
-   ```
+    ```bash
+    ./gradlew bootRun
+    ```
 3. Untuk Frontend:
-   ```bash
-   cd frontend && npm install && npm run dev
-   ```
+    ```bash
+    cd frontend && npm install && npm run dev
+    ```
 
 ---
 
 ## 🛡️ Prinsip Desain & SOLID
+
 Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
+
 - **Single Responsibility (SRP)**: Setiap microservice menangani satu domain bisnis yang jelas.
 - **Open/Closed (OCP)**: Sistem scoring di `service-clan` menggunakan Strategy Pattern, memungkinkan penambahan Tier baru tanpa mengubah logika inti.
 - **Dependency Inversion (DIP)**: Penggunaan shared interfaces untuk event handling.
@@ -188,11 +212,7 @@ Kami menerapkan prinsip rekayasa perangkat lunak yang ketat:
 
 Sistem menggunakan **JSON Web Token (JWT)**. Setiap request dari frontend ke backend (melalui Gateway) akan divalidasi keabsahan tokennya oleh `JwtAuthenticationFilter` yang berada di dalam `shared-lib` dan diimpor oleh setiap service secara terpisah untuk memvalidasi otorisasi.
 
-<<<<<<< HEAD
----
 
-=======
->>>>>>> ee98d471c4fb05ca6872f0b03deba781e3b00acf
 ## MODULE 9 - GROUP DISCUSSION
 
 ## 🏗️ Arsitektur Sistem Saat Ini
@@ -1167,194 +1187,6 @@ classDiagram
     CommentTreeResponse --> CommentTreeResponse : replies
 ```
 
----
-
-### 👤 Christna Yosua Rotinsulu — Auth Service & API Gateway
-
-Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (*first line of defense*) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
-
-#### 🏗️ Container Diagram — Aliran Autentikasi & Keamanan
-
-Diagram berikut menggambarkan bagaimana saya merancang interaksi sistem saat pengguna mencoba mengakses data sensitif. Permintaan dari *Frontend* tidak pernah langsung menyentuh *Microservice* internal; semuanya harus melewati filter ketat di API Gateway yang saya kembangkan.
-
-```mermaid
-flowchart TD
-    PELAJAR["👤 Pengguna\n(Pelajar / Admin)"]
-    FE["🌐 Frontend\n[React 19 + Vite]"]
-
-    subgraph GW["API Gateway (Port 8090)"]
-        direction TB
-        G_FILTER["GatewayAuthFilter\n(JWT Validator)"]
-        G_SEC["SecurityConfig\n(Reactive WebFlux)"]
-    end
-
-    subgraph AUTH["Auth Service (Port 8081)"]
-        direction TB
-        A_RATE["RateLimitFilter\n(Anti Brute-Force)"]
-        A_CORE["AuthService\n(Identity Logic)"]
-    end
-    
-    DB_A[("🗄️ PostgreSQL\n(Auth Database)")]
-    MQ["📨 RabbitMQ\n(User Events)"]
-    GOOGLE["🔗 Google SSO\n(External Identity)"]
-
-    PELAJAR --> FE
-    FE -->|"HTTP + JWT Header"| GW
-    GW -->|"Validate Token"| G_FILTER
-    G_FILTER -->|"Forward if Valid"| AUTH
-    AUTH --> A_RATE
-    A_RATE --> A_CORE
-    A_CORE --> DB_A
-    A_CORE -.->|"Publish UserRegistered"| MQ
-    A_CORE -.->|"Verify"| GOOGLE
-
-    style GW fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style AUTH fill:#438DD5,stroke:#2E6295,color:#FFFFFF
-    style DB_A fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
-    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
-```
-
-#### 🧩 Component Diagram — Arsitektur Internal
-
-Saya memecah tanggung jawab di setiap layanan menggunakan prinsip *Clean Architecture*. Di **API Gateway**, saya mengimplementasikan konfigurasi rute yang dinamis. Di **Auth Service**, saya menerapkan perlindungan berlapis, mulai dari filter keamanan hingga logika bisnis yang terisolasi.
-
-```mermaid
-flowchart LR
-    subgraph GATEWAY["API Gateway Component"]
-        direction TB
-        R1["GatewayConfig\n(Route Definitions)"]
-        R2["GatewayAuthFilter\n(Global JWT Interceptor)"]
-        R3["CorsConfig\n(Global Policy)"]
-    end
-
-    subgraph AUTH_COMP["Auth Service Component"]
-        direction TB
-        C1["AuthController\n(REST Interface)"]
-        C2["AuthRateLimitFilter\n(Brute-Force Protection)"]
-        C3["AuthServiceImpl\n(Business Logic)"]
-        C4["UserRepository\n(Data Access Layer)"]
-    end
-
-    GATEWAY -->|"/api/auth/**"| AUTH_COMP
-    C1 --> C2
-    C2 --> C3
-    C3 --> C4
-
-    style GATEWAY fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
-    style AUTH_COMP fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
-```
-
-#### 💻 Code Highlight & Logic Explanation
-
-##### 1. Perlindungan Brute-Force di Auth Service
-Saya menyadari bahwa keamanan akun pengguna sangat krusial. Oleh karena itu, saya mengimplementasikan `AuthRateLimitFilter` untuk membatasi jumlah permintaan login yang masuk dari alamat IP yang sama.
-
-```java
-// Contoh potongan kode AuthRateLimitFilter yang saya buat
-String key = request.getRequestURI() + ":" + clientIp(request);
-WindowCounter counter = counters.compute(key, (ignored, current) -> {
-    long now = Instant.now().getEpochSecond();
-    if (current == null || now - current.windowStartedAt() >= WINDOW_SECONDS) {
-        return new WindowCounter(now, 1);
-    }
-    return new WindowCounter(current.windowStartedAt(), current.count() + 1);
-});
-
-if (counter.count() > MAX_REQUESTS_PER_WINDOW) {
-    response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-    return; // Request ditolak
-}
-```
-
-##### 2. Gateway Authentication Filter
-Di sisi Gateway, saya menciptakan `GatewayAuthFilter` yang mampu membedakan rute publik (seperti login/register) dan rute privat secara cerdas menggunakan `isPublicRequest` logic.
-
-```java
-// Cuplikan logika penanganan request publik yang saya rancang
-private boolean isPublicRequest(ServerHttpRequest request) {
-    String path = request.getURI().getPath();
-    // Bypass autentikasi untuk endpoint tertentu
-    if (path.equals("/api/auth/register") || path.equals("/api/auth/login")) {
-        return true;
-    }
-    // Izinkan akses baca (GET) pada konten pembelajaran tanpa login
-    return HttpMethod.GET.equals(request.getMethod()) && path.startsWith("/api/learning/bacaan");
-}
-```
-
-#### 📊 Code Diagrams
-
-##### Code Diagram 1: Auth Service Core Structure
-Saya memisahkan antarmuka `AuthService` dengan implementasinya (`AuthServiceImpl`) untuk memudahkan pengujian unit (*Unit Testing*) dan menjaga fleksibilitas kode.
-
-```mermaid
-classDiagram
-    class AuthController {
-        +login(LoginRequest)
-        +register(RegisterRequest)
-        +googleSsoLogin(GoogleSsoRequest)
-    }
-    class AuthService {
-        <<interface>>
-        +login()
-        +register()
-    }
-    class AuthServiceImpl {
-        -UserRepository repo
-        -JwtService jwt
-        -RabbitTemplate rabbit
-        +login()
-        +register()
-    }
-    class UserRepository {
-        <<interface>>
-        +findByEmail()
-        +save()
-    }
-
-    AuthController --> AuthService : delegates
-    AuthService <|.. AuthServiceImpl : implements
-    AuthServiceImpl --> UserRepository : uses
-```
-
-##### Code Diagram 2: Gateway Security Mechanism
-Mekanisme ini menjamin bahwa setiap permintaan yang memerlukan otorisasi akan diverifikasi keabsahan tokennya sebelum diteruskan ke layanan tujuan.
-
-```mermaid
-classDiagram
-    class GatewayAuthFilter {
-        -JwtService jwtService
-        +filter(exchange, chain) Mono~Void~
-        -isPublicRequest(request) boolean
-    }
-    class GlobalFilter { <<interface>> }
-    class Ordered { <<interface>> }
-
-    GatewayAuthFilter ..|> GlobalFilter
-    GatewayAuthFilter ..|> Ordered
-    GatewayAuthFilter --> JwtService : validates token
-```
-
-#### 🌟 Bonus: Structural Pattern Implementation (Auth Facade)
-
-Untuk memenuhi standar arsitektur yang bersih, saya mengimplementasikan **Facade Pattern** melalui `AuthFacade`. Komponen ini bertugas sebagai pintu masuk tunggal bagi layanan internal lain yang membutuhkan data pengguna atau validasi token tanpa harus terpapar langsung pada kompleksitas `UserRepository` atau `AuthService`.
-
-```mermaid
-classDiagram
-    class AuthFacade {
-        -UserRepository userRepository
-        -JwtService jwtService
-        +getUserById(UUID): Optional~UserDto~
-        +isTokenValid(String): boolean
-    }
-    AuthFacade --> UserRepository
-    AuthFacade --> JwtService
-```
-
-Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal *Auth Service* tidak akan merusak integritas komponen lain yang mengonsumsinya.
-
----
-
 ### 📐 Code Diagram 2 — Service Layer (Forum Service)
 
 Menunjukkan kontrak `CommentService` dan implementasinya `CommentServiceImpl`, beserta dependency utamanya.
@@ -1484,6 +1316,816 @@ classDiagram
     CommentController ..> CommentDeletedEvent : returns
     JdbcCommentRepository ..> Comment : persists
 ```
+
+---
+
+## Individual Work — Ali Akbar Murtadha Service-Clan
+
+> **Component Diagram** (C4 Level 3) — Scope: Service-Clan container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
+>
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing lapisan (domain, API, service, scoring, persistence, events, security). Menunjukkan class, interface, record, enum, dan hubungan utama antar elemen kode.
+>
+> _(Ref: Module 09, hal. 119-120)_
+
+---
+
+### Component Diagram — Service-Clan (Port 8085)
+
+```mermaid
+flowchart TD
+    GW["API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
+    DB[("Clan DB\n[Container: H2 / PostgreSQL]\nFile: yomu_clan")]
+    SHARED["Shared Library\n[Library]\nJWT filter, event records"]
+
+    subgraph CLAN["Service-Clan [Container: Spring Boot, Port 8085]"]
+        direction TB
+
+        CTRL["ClanController\n[Component: Spring REST Controller]\nPath: /api/clan/**\nCRUD clan, leaderboard,\njoin, accept/reject, admin end-season"]
+
+        SVC_IF["ClanService\n[Component: Interface]\nKontrak bisnis clan & liga"]
+
+        SVC_IMPL["ClanServiceImpl\n[Component: Service Implementation]\nScoring per tier, buff/debuff,\nend-of-season, event-driven updates"]
+
+        REPO["ClanRepository\n[Component: JDBC Repository]\nJdbcTemplate, schema init,\ntables: clans, clan_members,\nmember_activity"]
+
+        LISTENER["ClanEventListener\n[Component: RabbitMQ Listener]\nKeys: yomu.quiz.completed,\nyomu.achievement.unlocked,\nyomu.daily.mission.completed"]
+
+        SCORING["ScoringStrategy + Factory\n[Component: Strategy Pattern]\nBronze, Silver, Gold, Diamond"]
+
+        SEC["ClanSecurityConfig\n[Component: Security]\nFilter chain scoped /api/clan/**\nJWT filter dari shared-lib"]
+    end
+
+    GW -->|"HTTP /api/clan/**"| CTRL
+    CTRL --> SVC_IF
+    SVC_IMPL -.->|implements| SVC_IF
+    SVC_IMPL --> REPO
+    SVC_IMPL --> SCORING
+    REPO -->|"JdbcTemplate [JDBC]"| DB
+    MQ -.->|"Subscribe @RabbitListener"| LISTENER
+    LISTENER --> SVC_IF
+    SHARED -.->|"JwtAuthenticationFilter"| SEC
+    SEC -.->|"secures"| CTRL
+
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style LISTENER fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SCORING fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
+    style DB fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+```
+
+---
+
+### Code Diagram 1 — Domain Model and DTOs
+
+Model domain clan/member dan record request untuk pembuatan clan.
+
+```mermaid
+classDiagram
+    class Clan {
+        <<class>>
+        UUID id
+        String name
+        String description
+        UUID leaderId
+        Tier tier
+        int totalScore
+        double scoreMultiplier
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+
+    class ClanMember {
+        <<class>>
+        UUID id
+        UUID clanId
+        UUID userId
+        String status
+        int personalScore
+        LocalDateTime joinedAt
+    }
+
+    class Tier {
+        <<enumeration>>
+        BRONZE
+        SILVER
+        GOLD
+        DIAMOND
+    }
+
+    class CreateClanRequest {
+        <<record>>
+        String name
+        String description
+        UUID leaderId
+    }
+
+    Clan --> Tier : tier
+```
+
+---
+
+### Code Diagram 2 — REST API Layer
+
+```mermaid
+classDiagram
+    class ClanController {
+        <<class>>
+        +createClan(CreateClanRequest) ResponseEntity~Clan~
+        +getClan(UUID) Clan
+        +leaderboard(String) List~Clan~
+        +joinClan(UUID, UUID) ResponseEntity~Void~
+        +getMembers(UUID) List~ClanMember~
+        +getPending(UUID) List~ClanMember~
+        +accept(UUID, UUID, UUID) ResponseEntity~Void~
+        +reject(UUID, UUID, UUID) ResponseEntity~Void~
+        +deleteClan(UUID, UUID) ResponseEntity~Void~
+        +endSeason() ResponseEntity~Void~
+    }
+
+    class ClanService {
+        <<interface>>
+    }
+
+    ClanController --> ClanService : uses
+```
+
+---
+
+### Code Diagram 3 — Service Layer
+
+```mermaid
+classDiagram
+    class ClanService {
+        <<interface>>
+        +createClan(String, String, UUID) Clan
+        +getClanById(UUID) Clan
+        +getLeaderboard(String) List~Clan~
+        +joinClan(UUID, UUID) void
+        +acceptMember(UUID, UUID, UUID) void
+        +rejectMember(UUID, UUID, UUID) void
+        +deleteClan(UUID, UUID) void
+        +getMembers(UUID) List~ClanMember~
+        +getPendingMembers(UUID) List~ClanMember~
+        +triggerEndOfSeason() void
+        +processUserActivity(UUID, int, Instant) void
+        +processAchievementUnlocked(UUID, String) void
+        +processMissionCompleted(UUID) void
+    }
+
+    class ClanServiceImpl {
+        <<class>>
+        -ClanRepository repository
+    }
+
+    class ClanRepository {
+        <<class>>
+    }
+
+    class ScoringStrategyFactory {
+        <<class>>
+        +getStrategy(Tier)$ ScoringStrategy
+    }
+
+    ClanService <|.. ClanServiceImpl : implements
+    ClanServiceImpl --> ClanRepository : uses
+    ClanServiceImpl ..> ScoringStrategyFactory : getStrategy
+```
+
+---
+
+### Code Diagram 4 — Scoring Strategy Pattern
+
+```mermaid
+classDiagram
+    class ScoringStrategy {
+        <<interface>>
+        +calculateScore(List~ClanMember~) int
+    }
+
+    class ScoringStrategyFactory {
+        <<class>>
+        +getStrategy(Tier)$ ScoringStrategy
+    }
+
+    class BronzeScoringStrategy {
+        <<class>>
+    }
+
+    class SilverScoringStrategy {
+        <<class>>
+    }
+
+    class GoldScoringStrategy {
+        <<class>>
+    }
+
+    class DiamondScoringStrategy {
+        <<class>>
+    }
+
+    class Tier {
+        <<enumeration>>
+    }
+
+    ScoringStrategy <|.. BronzeScoringStrategy
+    ScoringStrategy <|.. SilverScoringStrategy
+    ScoringStrategy <|.. GoldScoringStrategy
+    ScoringStrategy <|.. DiamondScoringStrategy
+    ScoringStrategyFactory ..> Tier : selects by
+    ScoringStrategyFactory ..> ScoringStrategy : creates
+```
+
+---
+
+### Code Diagram 5 — Persistence (ClanRepository)
+
+```mermaid
+classDiagram
+    class ClanRepository {
+        <<class>>
+        -JdbcTemplate jdbcTemplate
+        +saveClan(Clan) Clan
+        +findClanById(UUID) Optional~Clan~
+        +findAllClans() List~Clan~
+        +findClansByTier(Tier) List~Clan~
+        +existsByName(String) boolean
+        +updateClanScore(UUID, int, double) void
+        +updateClanTier(UUID, Tier) void
+        +deleteClanById(UUID) int
+        +saveMember(ClanMember) ClanMember
+        +findMembersByClanId(UUID) List~ClanMember~
+        +findPendingMembersByClanId(UUID) List~ClanMember~
+        +findMemberByUserId(UUID) Optional~ClanMember~
+        +updateMemberStatus(UUID, String) void
+        +updateMemberScore(UUID, int) void
+        +deleteMember(UUID) void
+        +recordQuizActivity(UUID, UUID, int, int) void
+        +recordMissionCompletion(UUID, UUID) void
+        +getClanActivitySummary(UUID) ClanActivitySummary
+    }
+
+    class JdbcTemplate {
+        <<Spring>>
+    }
+
+    class ClanActivitySummary {
+        <<record>>
+        int activeMembers
+        int completedMissions
+        int totalCorrect
+        int totalQuestions
+    }
+
+    ClanRepository --> JdbcTemplate : uses
+    ClanRepository ..> ClanActivitySummary : returns
+
+    note for ClanActivitySummary "Defined as inner record\ninside ClanRepository"
+```
+
+---
+
+### Code Diagram 6 — Event Integration (ClanEventListener)
+
+```mermaid
+classDiagram
+    class ClanEventListener {
+        <<class>>
+        +onQuizCompleted(QuizCompletedEvent) void
+        +onAchievementUnlocked(AchievementUnlockedEvent) void
+        +onMissionCompleted(DailyMissionCompletedEvent) void
+    }
+
+    class QuizCompletedEvent {
+        <<record>>
+    }
+
+    class AchievementUnlockedEvent {
+        <<record>>
+    }
+
+    class DailyMissionCompletedEvent {
+        <<record>>
+    }
+
+    class ClanService {
+        <<interface>>
+    }
+
+    ClanEventListener --> ClanService : delegates
+    ClanEventListener ..> QuizCompletedEvent : consumes
+    ClanEventListener ..> AchievementUnlockedEvent : consumes
+    ClanEventListener ..> DailyMissionCompletedEvent : consumes
+```
+
+---
+
+### Code Diagram 7 — Security (ClanSecurityConfig)
+
+```mermaid
+classDiagram
+    class ClanSecurityConfig {
+        <<class>>
+        +clanSecurityFilterChain(HttpSecurity) SecurityFilterChain
+    }
+
+    class JwtAuthenticationFilter {
+        <<class>>
+    }
+
+    class SecurityFilterChain {
+        <<Spring Security>>
+    }
+
+    ClanSecurityConfig ..> JwtAuthenticationFilter : inserts before auth
+    ClanSecurityConfig ..> SecurityFilterChain : builds
+```
+
+---
+
+### 👤 Christna Yosua Rotinsulu — Auth Service & API Gateway
+
+Dalam pengembangan Yomu-App, saya bertanggung jawab penuh atas dua komponen kritikal yang menjaga integritas dan keamanan seluruh ekosistem: **API Gateway (`api-gateway`)** dan **Auth Service (`service-auth`)**. API Gateway berperan sebagai benteng terdepan (_first line of defense_) yang mengatur arus lalu lintas permintaan, sedangkan Auth Service adalah otak di balik manajemen identitas dan hak akses pengguna.
+
+#### 🏗️ Container Diagram — Aliran Autentikasi & Keamanan
+
+Diagram berikut menggambarkan bagaimana saya merancang interaksi sistem saat pengguna mencoba mengakses data sensitif. Permintaan dari _Frontend_ tidak pernah langsung menyentuh _Microservice_ internal; semuanya harus melewati filter ketat di API Gateway yang saya kembangkan.
+
+```mermaid
+flowchart TD
+    PELAJAR["👤 Pengguna\n(Pelajar / Admin)"]
+    FE["🌐 Frontend\n[React 19 + Vite]"]
+
+    subgraph GW["API Gateway (Port 8090)"]
+        direction TB
+        G_FILTER["GatewayAuthFilter\n(JWT Validator)"]
+        G_SEC["SecurityConfig\n(Reactive WebFlux)"]
+    end
+
+    subgraph AUTH["Auth Service (Port 8081)"]
+        direction TB
+        A_RATE["RateLimitFilter\n(Anti Brute-Force)"]
+        A_CORE["AuthService\n(Identity Logic)"]
+    end
+
+    DB_A[("🗄️ PostgreSQL\n(Auth Database)")]
+    MQ["📨 RabbitMQ\n(User Events)"]
+    GOOGLE["🔗 Google SSO\n(External Identity)"]
+
+    PELAJAR --> FE
+    FE -->|"HTTP + JWT Header"| GW
+    GW -->|"Validate Token"| G_FILTER
+    G_FILTER -->|"Forward if Valid"| AUTH
+    AUTH --> A_RATE
+    A_RATE --> A_CORE
+    A_CORE --> DB_A
+    A_CORE -.->|"Publish UserRegistered"| MQ
+    A_CORE -.->|"Verify"| GOOGLE
+
+    style GW fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style AUTH fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style DB_A fill:#2E7D32,stroke:#1B5E20,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+```
+
+#### 🧩 Component Diagram — Arsitektur Internal
+
+Saya memecah tanggung jawab di setiap layanan menggunakan prinsip _Clean Architecture_. Di **API Gateway**, saya mengimplementasikan konfigurasi rute yang dinamis. Di **Auth Service**, saya menerapkan perlindungan berlapis, mulai dari filter keamanan hingga logika bisnis yang terisolasi.
+
+```mermaid
+flowchart LR
+    subgraph GATEWAY["API Gateway Component"]
+        direction TB
+        R1["GatewayConfig\n(Route Definitions)"]
+        R2["GatewayAuthFilter\n(Global JWT Interceptor)"]
+        R3["CorsConfig\n(Global Policy)"]
+    end
+
+    subgraph AUTH_COMP["Auth Service Component"]
+        direction TB
+        C1["AuthController\n(REST Interface)"]
+        C2["AuthRateLimitFilter\n(Brute-Force Protection)"]
+        C3["AuthServiceImpl\n(Business Logic)"]
+        C4["UserRepository\n(Data Access Layer)"]
+    end
+
+    GATEWAY -->|"/api/auth/**"| AUTH_COMP
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+
+    style GATEWAY fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
+    style AUTH_COMP fill:#f8f9fa,stroke:#438DD5,stroke-width:2px
+```
+
+#### 💻 Code Highlight & Logic Explanation
+
+##### 1. Perlindungan Brute-Force di Auth Service
+
+Saya menyadari bahwa keamanan akun pengguna sangat krusial. Oleh karena itu, saya mengimplementasikan `AuthRateLimitFilter` untuk membatasi jumlah permintaan login yang masuk dari alamat IP yang sama.
+
+```java
+// Contoh potongan kode AuthRateLimitFilter yang saya buat
+String key = request.getRequestURI() + ":" + clientIp(request);
+WindowCounter counter = counters.compute(key, (ignored, current) -> {
+    long now = Instant.now().getEpochSecond();
+    if (current == null || now - current.windowStartedAt() >= WINDOW_SECONDS) {
+        return new WindowCounter(now, 1);
+    }
+    return new WindowCounter(current.windowStartedAt(), current.count() + 1);
+});
+
+if (counter.count() > MAX_REQUESTS_PER_WINDOW) {
+    response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+    return; // Request ditolak
+}
+```
+
+##### 2. Gateway Authentication Filter
+
+Di sisi Gateway, saya menciptakan `GatewayAuthFilter` yang mampu membedakan rute publik (seperti login/register) dan rute privat secara cerdas menggunakan `isPublicRequest` logic.
+
+```java
+// Cuplikan logika penanganan request publik yang saya rancang
+private boolean isPublicRequest(ServerHttpRequest request) {
+    String path = request.getURI().getPath();
+    // Bypass autentikasi untuk endpoint tertentu
+    if (path.equals("/api/auth/register") || path.equals("/api/auth/login")) {
+        return true;
+    }
+    // Izinkan akses baca (GET) pada konten pembelajaran tanpa login
+    return HttpMethod.GET.equals(request.getMethod()) && path.startsWith("/api/learning/bacaan");
+}
+```
+
+#### 📊 Code Diagrams
+
+##### Code Diagram 1: Auth Service Core Structure
+
+Saya memisahkan antarmuka `AuthService` dengan implementasinya (`AuthServiceImpl`) untuk memudahkan pengujian unit (_Unit Testing_) dan menjaga fleksibilitas kode.
+
+```mermaid
+classDiagram
+    class AuthController {
+        +login(LoginRequest)
+        +register(RegisterRequest)
+        +googleSsoLogin(GoogleSsoRequest)
+    }
+    class AuthService {
+        <<interface>>
+        +login()
+        +register()
+    }
+    class AuthServiceImpl {
+        -UserRepository repo
+        -JwtService jwt
+        -RabbitTemplate rabbit
+        +login()
+        +register()
+    }
+    class UserRepository {
+        <<interface>>
+        +findByEmail()
+        +save()
+    }
+
+    AuthController --> AuthService : delegates
+    AuthService <|.. AuthServiceImpl : implements
+    AuthServiceImpl --> UserRepository : uses
+```
+
+##### Code Diagram 2: Gateway Security Mechanism
+
+Mekanisme ini menjamin bahwa setiap permintaan yang memerlukan otorisasi akan diverifikasi keabsahan tokennya sebelum diteruskan ke layanan tujuan.
+
+```mermaid
+classDiagram
+    class GatewayAuthFilter {
+        -JwtService jwtService
+        +filter(exchange, chain) Mono~Void~
+        -isPublicRequest(request) boolean
+    }
+    class GlobalFilter { <<interface>> }
+    class Ordered { <<interface>> }
+
+    GatewayAuthFilter ..|> GlobalFilter
+    GatewayAuthFilter ..|> Ordered
+    GatewayAuthFilter --> JwtService : validates token
+```
+
+#### 🌟 Bonus: Structural Pattern Implementation (Auth Facade)
+
+Untuk memenuhi standar arsitektur yang bersih, saya mengimplementasikan **Facade Pattern** melalui `AuthFacade`. Komponen ini bertugas sebagai pintu masuk tunggal bagi layanan internal lain yang membutuhkan data pengguna atau validasi token tanpa harus terpapar langsung pada kompleksitas `UserRepository` atau `AuthService`.
+
+```mermaid
+classDiagram
+    class AuthFacade {
+        -UserRepository userRepository
+        -JwtService jwtService
+        +getUserById(UUID): Optional~UserDto~
+        +isTokenValid(String): boolean
+    }
+    AuthFacade --> UserRepository
+    AuthFacade --> JwtService
+```
+
+Pola ini saya terapkan untuk memastikan bahwa perubahan pada internal _Auth Service_ tidak akan merusak integritas komponen lain yang mengonsumsinya.
+
+---
+
+## Individual Work — M. Adella Fathir Supriadi (Learning Service)
+
+> **Component Diagram** (C4 Level 3) — Scope: Learning Service container. Menunjukkan komponen internal beserta tanggung jawab dan teknologinya. Semua komponen berjalan dalam satu process space.
+>
+> **Code Diagram** (C4 Level 4) — Scope: masing-masing komponen. Menunjukkan class, interface, record, dan enum yang membentuk komponen tersebut.
+>
+> *(Ref: Module 09, hal. 119-120)*
+
+---
+
+### 📐 Component Diagram — Learning Service (Port 8082)
+
+```mermaid
+flowchart TD
+    GW["🚪 API Gateway\n[Container: Spring Cloud Gateway]\nPort 8090"]
+    MQ["📨 RabbitMQ\n[Container: Message Broker]\nExchange: yomu.events (topic)"]
+    DB[("🗄️ Learning DB\n[Container: H2 / PostgreSQL]")]
+    SHARED["📦 Shared Library\n[Library]\nEvent POJOs, JWT Filter"]
+
+    subgraph LEARN["Learning Service [Container: Spring Boot 3.x, Port 8082]"]
+        direction TB
+
+        CTRL["🎯 BacaanController\n[Component: Spring REST Controller]\n\nSingle controller yang meng-handle\nsemua endpoint bacaan, pertanyaan,\nkuis, dan statistik user.\nPath: /api/learning/**"]
+
+        SVC_IF["⚙️ BacaanService\n[Component: Interface]\n\nKontrak bisnis: CRUD bacaan,\nCRUD pertanyaan, submit kuis,\npengecekan status kuis,\ndan statistik user"]
+
+        SVC_IMPL["⚙️ BacaanServiceImpl\n[Component: Service Implementation]\n\nImplementasi logika bisnis.\nPenilaian kuis, validasi kepemilikan,\ndan publishing events ke RabbitMQ"]
+
+        REPO["💾 BacaanRepository\n[Component: JDBC Repository]\n\nAkses data via JdbcTemplate.\nMengelola 3 tabel:\nbacaan, questions, quiz_attempts.\nMembuat tabel via @PostConstruct"]
+
+        SEC["🔒 LearningSecurityConfig\n[Component: Security Configuration]\n\nKonfigurasi Spring Security:\nendpoint admin memerlukan ROLE_ADMIN,\nendpoint publik untuk bacaan & kuis.\nMenggunakan JwtAuthenticationFilter\ndari shared-lib."]
+
+        EX["⚠️ GlobalExceptionHandler\n[Component: Exception Handler]\n\nMenangani AccessDeniedException (403),\nResponseStatusException, dan\ngeneric Exception (500).\nMengembalikan ErrorResponse standar."]
+    end
+
+    %% External → Controller
+    GW -->|"HTTP requests\n/api/learning/**"| CTRL
+
+    %% Controller → Service
+    CTRL --> SVC_IF
+
+    %% Interface → Implementation
+    SVC_IF -.->|"implements"| SVC_IMPL
+
+    %% Service → Repository
+    SVC_IMPL --> REPO
+
+    %% Service → RabbitMQ (publish)
+    SVC_IMPL -.->|"Publishes via RabbitTemplate:\nyomu.learning.completed\nyomu.quiz.completed\n[AMQP]"| MQ
+
+    %% Repository → Database
+    REPO -->|"JdbcTemplate\n[JDBC]"| DB
+
+    %% Shared lib
+    SHARED -.->|"JwtAuthenticationFilter\nEvent POJOs"| SEC
+    SHARED -.->|"LearningCompletedEvent\nQuizCompletedEvent"| SVC_IMPL
+
+    %% Styling
+    style CTRL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IF fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SVC_IMPL fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style REPO fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style SEC fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style EX fill:#438DD5,stroke:#2E6295,color:#FFFFFF
+    style GW fill:#999999,stroke:#6B6B6B,color:#FFFFFF
+    style MQ fill:#FF9900,stroke:#CC7A00,color:#FFFFFF
+    style SHARED fill:#85BBF0,stroke:#5D95C4,color:#000000
+```
+
+---
+
+### 📐 Code Diagram 1 — Domain Model (Entities & DTOs)
+
+Menunjukkan elemen kode di dalam komponen model: entity class untuk domain objek dan DTO untuk request/response.
+
+```mermaid
+classDiagram
+    class Bacaan {
+        UUID id
+        String title
+        String content
+        String category
+        UUID createdByUserId
+        Instant createdAt
+        Instant updatedAt
+    }
+
+    class Question {
+        UUID id
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+        String correctOption
+        Instant createdAt
+    }
+
+    class QuizAttempt {
+        UUID id
+        UUID userId
+        UUID bacaanId
+        int score
+        int totalQuestions
+        Instant completedAt
+    }
+
+    class CreateBacaanRequest {
+        String title
+        String content
+        String category
+    }
+
+    class CreateQuestionRequest {
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+        String correctOption
+    }
+
+    class SubmitQuizRequest {
+        UUID userId
+        List~AnswerEntry~ answers
+    }
+
+    class AnswerEntry {
+        UUID questionId
+        String selectedOption
+    }
+
+    class QuizQuestionResponse {
+        <<record>>
+        UUID id
+        UUID bacaanId
+        String questionText
+        String optionA
+        String optionB
+        String optionC
+        String optionD
+    }
+
+    class QuizStatsResponse {
+        int quizCompleted
+        double accuracy
+        List~QuizAttempt~ recentAttempts
+    }
+
+    class ErrorResponse {
+        String message
+        String errorCode
+        Instant timestamp
+        int status
+    }
+
+    Question --> Bacaan : bacaanId
+    QuizAttempt --> Bacaan : bacaanId
+    SubmitQuizRequest --> AnswerEntry : answers
+```
+
+---
+
+### 📐 Code Diagram 2 — Service Layer (Interface + Implementation + Repository)
+
+Menunjukkan kontrak `BacaanService` dan implementasinya `BacaanServiceImpl`, beserta `BacaanRepository` dan dependency-nya.
+
+```mermaid
+classDiagram
+    class BacaanService {
+        <<interface>>
+        +createBacaan(CreateBacaanRequest, UUID createdBy) Bacaan
+        +listBacaan(String category) List~Bacaan~
+        +getBacaanById(UUID id) Bacaan
+        +updateBacaan(UUID id, CreateBacaanRequest) Bacaan
+        +deleteBacaan(UUID id) void
+        +addQuestion(CreateQuestionRequest) Question
+        +getQuestionsByBacaanId(UUID bacaanId) List~QuizQuestionResponse~
+        +deleteQuestion(UUID questionId) void
+        +submitQuiz(UUID bacaanId, SubmitQuizRequest) QuizAttempt
+        +hasCompletedQuiz(UUID userId, UUID bacaanId) boolean
+        +getUserStats(UUID userId) QuizStatsResponse
+    }
+
+    class BacaanServiceImpl {
+        -BacaanRepository bacaanRepository
+        -RabbitTemplate rabbitTemplate
+        +createBacaan(CreateBacaanRequest, UUID) Bacaan
+        +listBacaan(String) List~Bacaan~
+        +getBacaanById(UUID) Bacaan
+        +updateBacaan(UUID, CreateBacaanRequest) Bacaan
+        +deleteBacaan(UUID) void
+        +addQuestion(CreateQuestionRequest) Question
+        +getQuestionsByBacaanId(UUID) List~QuizQuestionResponse~
+        +deleteQuestion(UUID) void
+        +submitQuiz(UUID, SubmitQuizRequest) QuizAttempt
+        +hasCompletedQuiz(UUID, UUID) boolean
+        +getUserStats(UUID) QuizStatsResponse
+        -scoreQuiz(List~Question~, List~AnswerEntry~) int
+        -validateQuizOwner(UUID requestUserId, UUID tokenUserId) void
+    }
+
+    class BacaanRepository {
+        -JdbcTemplate jdbcTemplate
+        +saveBacaan(Bacaan) Bacaan
+        +findAllBacaan() List~Bacaan~
+        +findBacaanByCategory(String) List~Bacaan~
+        +findBacaanById(UUID) Optional~Bacaan~
+        +deleteBacaanById(UUID) void
+        +saveQuestion(Question) Question
+        +findQuestionsByBacaanId(UUID) List~Question~
+        +deleteQuestionById(UUID) void
+        +saveQuizAttempt(QuizAttempt) QuizAttempt
+        +hasUserCompletedQuiz(UUID userId, UUID bacaanId) boolean
+        +findAttemptsByUserId(UUID) List~QuizAttempt~
+        +getStatsByUserId(UUID) QuizStats
+    }
+
+    class RabbitTemplate {
+        <<external>>
+        +convertAndSend(String routingKey, Object message) void
+    }
+
+    BacaanService <|.. BacaanServiceImpl : implements
+    BacaanServiceImpl --> BacaanRepository : bacaanRepository
+    BacaanServiceImpl --> RabbitTemplate : rabbitTemplate
+```
+
+---
+
+### 📐 Code Diagram 3 — Controller, Security & Published Events
+
+Menunjukkan `BacaanController` sebagai entry point REST, `LearningSecurityConfig` untuk keamanan, `GlobalExceptionHandler` untuk penanganan error terpusat, serta event objects dari shared-lib yang dipublish oleh service.
+
+```mermaid
+classDiagram
+    class BacaanController {
+        -BacaanService bacaanService
+        +createBacaan(CreateBacaanRequest, Principal) ResponseEntity~Bacaan~
+        +listBacaan(String category) ResponseEntity~List~Bacaan~~
+        +getBacaanById(UUID) ResponseEntity~Bacaan~
+        +updateBacaan(UUID, CreateBacaanRequest) ResponseEntity~Bacaan~
+        +deleteBacaan(UUID) ResponseEntity~Void~
+        +addQuestion(CreateQuestionRequest) ResponseEntity~Question~
+        +getQuestions(UUID bacaanId) ResponseEntity~List~QuizQuestionResponse~~
+        +deleteQuestion(UUID) ResponseEntity~Void~
+        +submitQuiz(UUID bacaanId, SubmitQuizRequest) ResponseEntity~QuizAttempt~
+        +checkQuizStatus(UUID bacaanId, UUID userId) ResponseEntity~Boolean~
+        +getUserStats(UUID userId) ResponseEntity~QuizStatsResponse~
+    }
+    note for BacaanController "Admin endpoints (@PreAuthorize hasRole ADMIN):\ncreateBacaan, updateBacaan, deleteBacaan,\naddQuestion, deleteQuestion\n\nPublic endpoints (no auth required):\nlistBacaan, getBacaanById, getQuestions,\ncheckQuizStatus"
+
+    class LearningSecurityConfig {
+        +SecurityFilterChain filterChain(HttpSecurity) SecurityFilterChain
+        +JwtAuthenticationFilter jwtAuthenticationFilter() JwtAuthenticationFilter
+    }
+    note for LearningSecurityConfig "Permitted tanpa auth:\n/api/learning/bacaan/**\n/api/learning/*/questions\n/api/learning/*/quiz/status\nSession stateless (JWT)"
+
+    class GlobalExceptionHandler {
+        +handleAccessDenied(AccessDeniedException) ResponseEntity~ErrorResponse~
+        +handleResponseStatus(ResponseStatusException) ResponseEntity~ErrorResponse~
+        +handleGeneric(Exception) ResponseEntity~ErrorResponse~
+    }
+
+    class LearningCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID bacaanId
+        Instant occurredAt
+    }
+
+    class QuizCompletedEvent {
+        <<record / shared-lib>>
+        UUID userId
+        UUID quizId
+        Instant occurredAt
+    }
+
+    BacaanController --> BacaanService : delegates to
+    BacaanServiceImpl ..> LearningCompletedEvent : publishes
+    BacaanServiceImpl ..> QuizCompletedEvent : publishes
+```
+
+---
+
 
 ---
 
