@@ -5,7 +5,7 @@ Yomu adalah platform aplikasi pembelajaran (gamifikasi) yang membantu masyarakat
 ## 🏗️ Perubahan Arsitektur & Implementasi Terbaru
 
 1. **Migrasi Penuh ke Microservices**: Aplikasi yang sebelumnya monolitik atau setengah jalan telah dipecah secara rapi menjadi service independen:
-    - `api-gateway` (Port 8080): Melakukan routing request dari frontend ke service terkait.
+    - `api-gateway` (Port 8090): Melakukan routing request dari frontend ke service terkait.
     - `service-auth` (Port 8081): Mengurus registrasi, login, dan validasi JWT.
     - `service-learning` (Port 8082): Menangani CRUD Bacaan dan pengerjaan Kuis.
     - `service-achievements` (Port 8083): Menangani sistem pencapaian (Achievements) dan Misi Harian.
@@ -89,7 +89,7 @@ npm install
 npm run dev
 ```
 
-- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8080`.
+- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8090`.
 
 Penjelasan singkat:
 
@@ -131,7 +131,7 @@ npm install
 npm run dev
 ```
 
-- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8080`.
+- Akses aplikasi di `http://localhost:5173` (Vite default port) dan API Gateway di `http://localhost:8090`.
 
 ## 🔐 Keamanan
 
