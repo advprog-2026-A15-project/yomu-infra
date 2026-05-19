@@ -102,11 +102,7 @@ Mengelola sistem gamifikasi:
 - Tracking Pencapaian (Badges/Medals).
 - Misi Harian (Daily Missions).
 - Publisher Event: Mengirimkan `AchievementUnlockedEvent` dan `DailyMissionCompletedEvent`.
-
-### 5. 💬 Forum Service (Port 8084)
-
 Ruang diskusi komunitas:
-
 - Thread-based discussions.
 - Nested Comments (Komentar bersarang).
 - Repositori berbasis JDBC untuk efisiensi query diskusi.

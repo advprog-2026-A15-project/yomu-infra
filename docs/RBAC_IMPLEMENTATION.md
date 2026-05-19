@@ -8,7 +8,7 @@ This document describes the implementation of role-based access control (RBAC) f
 
 ### API Gateway
 
-All requests from frontend go through the API Gateway (Port 8080) which routes them to the appropriate microservice:
+All requests from frontend go through the API Gateway (Port 8090) which routes them to the appropriate microservice:
 
 - `/api/learning/**` → `service-learning` (Port 8082)
 - `/api/forum/**` → `service-forum` (Port 8084)
@@ -18,7 +18,7 @@ All requests from frontend go through the API Gateway (Port 8080) which routes t
 1. User logs in via `service-auth`
 2. Receives JWT token containing:
     - `username` (subject)
-    - `role` (ADMIN or USER)
+    - `role` (ADMIN or PELAJAR)
     - `id` (userId)
 3. Frontend sends JWT in `Authorization: Bearer <token>` header
 4. `JwtAuthenticationFilter` (in shared-lib) validates and sets authentication context
@@ -38,8 +38,8 @@ All requests from frontend go through the API Gateway (Port 8080) which routes t
 | `/api/learning/bacaan/{bacaanId}/questions`   | GET    | Public        | Get quiz questions             |
 | `/api/learning/questions`                     | POST   | ADMIN         | Add quiz question              |
 | `/api/learning/questions/{questionId}`        | DELETE | ADMIN         | Delete quiz question           |
-| `/api/learning/bacaan/{bacaanId}/quiz`        | POST   | Public        | Submit quiz answers            |
-| `/api/learning/bacaan/{bacaanId}/quiz/status` | GET    | Public        | Check quiz completion status   |
+| `/api/learning/bacaan/{bacaanId}/quiz`        | POST   | Authenticated | Submit quiz answers            |
+| `/api/learning/bacaan/{bacaanId}/quiz/status` | GET    | Authenticated | Check quiz completion status   |
 
 ### Implementation
 
@@ -214,7 +214,7 @@ Provides these methods:
 {
     "sub": "user@example.com", // username
     "id": "uuid-of-user", // userId
-    "role": "ADMIN", // or "USER"
+    "role": "ADMIN", // or "PELAJAR"
     "iat": 1234567890,
     "exp": 1234654290
 }
@@ -290,16 +290,16 @@ try {
 
 ```bash
 # Get list of materials (public)
-curl http://localhost:8080/api/learning/bacaan
+curl http://localhost:8090/api/learning/bacaan
 
 # Create material (requires ADMIN token)
-curl -X POST http://localhost:8080/api/learning/bacaan \
+curl -X POST http://localhost:8090/api/learning/bacaan \
   -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"title":"Test","content":"...","category":"Test"}'
 
 # Update comment (requires token as author or admin)
-curl -X PUT http://localhost:8080/api/forum/comments/<COMMENT_ID> \
+curl -X PUT http://localhost:8090/api/forum/comments/<COMMENT_ID> \
   -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"commentContent":"Updated content"}'
