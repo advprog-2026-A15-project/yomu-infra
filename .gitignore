@@ -43,3 +43,6 @@ shared-lib
 .localdb/
 .vscode/
 .idea/
+
+# Specific ignored directories
+/module/
