@@ -129,6 +129,21 @@ services:
     volumes:
       - clan-data:/data
 
+  # ─── Notification Service ────────────────────────────────────────
+  service-notification:
+    build:
+      context: .
+      dockerfile: ./service-notification/Dockerfile
+      args:
+        CLEAN_GRADLE_CACHE: ${CLEAN_GRADLE_CACHE:-0}
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+    depends_on:
+      - rabbitmq
+
   # ─── Monitoring ──────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
@@ -144,6 +159,7 @@ services:
       - service-achievements
       - service-clan
       - service-forum
+      - service-notification
       - rabbitmq
 
   grafana:

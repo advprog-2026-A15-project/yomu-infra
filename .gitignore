@@ -37,11 +37,18 @@ service-auth/
 service-clan/
 service-forum/
 service-learning/
-shared-lib
+service-notification/
+shared-lib/
 
 .localdb/
 .vscode/
 .idea/
+.claude/
+
+# Scripts
+setup-profiling.ps1
+setup-profiling.py
+setup-security.py
 
 # Specific ignored directories
 /module/
