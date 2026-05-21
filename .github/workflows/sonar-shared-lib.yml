@@ -1,0 +1,45 @@
+name: SonarQube Shared Lib
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - "shared-lib/**"
+      - ".github/workflows/sonar-shared-lib.yml"
+  pull_request:
+    paths:
+      - "shared-lib/**"
+      - ".github/workflows/sonar-shared-lib.yml"
+  workflow_dispatch:
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Clone service repositories when running from infra repo
+        run: |
+          if [ -f "./clone-repositories.sh" ]; then
+            chmod +x ./clone-repositories.sh
+            ./clone-repositories.sh
+          fi
+
+      - name: Build, Test and Analyze Shared Lib
+        working-directory: shared-lib
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: ./gradlew build jacocoTestReport sonar --no-daemon
