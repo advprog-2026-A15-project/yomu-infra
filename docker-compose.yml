@@ -47,8 +47,9 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
       - YOMU_SECURITY_BYPASS=true
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - YOMU_ADMIN_EMAILS=${YOMU_ADMIN_EMAILS:-christna.yosua@ui.ac.id,christian.yosua@ui.ac.id,tirta.rendy@ui.ac.id,nathanael.leander@ui.ac.id}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
     volumes:
       - auth-data:/data
 
