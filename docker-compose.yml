@@ -127,6 +127,34 @@ services:
     volumes:
       - clan-data:/data
 
+  # ─── Monitoring ──────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api-gateway
+      - service-auth
+      - service-learning
+      - service-achievements
+      - service-clan
+      - service-forum
+      - rabbitmq
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
 volumes:
   auth-data:
   learning-data:
