@@ -30,15 +30,7 @@ log/**
 data/
 
 # Services
-api-gateway/
-frontend/
-service-achievements/
-service-auth/
-service-clan/
-service-forum/
-service-learning/
-service-notification/
-shared-lib/
+# (Source directories removed from gitignore)
 
 .localdb/
 .vscode/
