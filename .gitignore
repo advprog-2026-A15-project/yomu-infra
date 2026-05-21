@@ -21,9 +21,8 @@ frontend/dist/
 *.pem
 *.googleusercontent.com.json
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+log/**
 
 # H2 Database files
 *.mv.db
