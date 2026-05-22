@@ -1,0 +1,203 @@
+services:
+  # ─── RabbitMQ ──────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  # ─── Reverse Proxy (Nginx) ──────────────────────────────────────────
+  nginx-proxy:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - api-gateway
+
+  # ─── Frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - api-gateway
+
+  # ─── API Gateway ──────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    depends_on:
+      - rabbitmq
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_WEB_APPLICATION_TYPE=reactive
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Auth Service ─────────────────────────────────────────────────
+  service-auth:
+    build:
+      context: .
+      dockerfile: ./service-auth/Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_auth;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
+      - YOMU_ADMIN_EMAILS=${YOMU_ADMIN_EMAILS:-christna.yosua@ui.ac.id,christian.yosua@ui.ac.id,tirta.rendy@ui.ac.id,nathanael.leander@ui.ac.id}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    volumes:
+      - auth-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Learning Service ────────────────────────────────────────────
+  service-learning:
+    build:
+      context: .
+      dockerfile: ./service-learning/Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_learning;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    volumes:
+      - learning-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Achievements Service ────────────────────────────────────────
+  service-achievements:
+    build:
+      context: .
+      dockerfile: ./service-achievements/Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_achievements;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_LISTENER_SIMPLE_AUTO_STARTUP=true
+      - SPRING_RABBITMQ_LISTENER_DIRECT_AUTO_STARTUP=true
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    volumes:
+      - achievements-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Forum Service ───────────────────────────────────────────────
+  service-forum:
+    build:
+      context: .
+      dockerfile: ./service-forum/Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_forum;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    volumes:
+      - forum-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Clan Service ────────────────────────────────────────────────
+  service-clan:
+    build:
+      context: .
+      dockerfile: ./service-clan/Dockerfile
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_clan;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    volumes:
+      - clan-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Notification Service ────────────────────────────────────────
+  service-notification:
+    build:
+      context: .
+      dockerfile: ./service-notification/Dockerfile
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+    depends_on:
+      - rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ─── Monitoring ──────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api-gateway
+      - service-auth
+      - service-learning
+      - service-achievements
+      - service-clan
+      - service-forum
+      - service-notification
+      - rabbitmq
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+
+volumes:
+  auth-data:
+  learning-data:
+  achievements-data:
+  forum-data:
+  clan-data:

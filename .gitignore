@@ -48,3 +48,5 @@ setup-security.py
 *.jfr
 scratch_*
 load_test.py
+*.tar
+*.tar.gz
