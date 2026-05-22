@@ -14,4 +14,3 @@ scrape_configs:
           - "service-forum:8084"
           - "service-clan:8085"
           - "api-gateway:8090"
-          - "rabbitmq:15672"
