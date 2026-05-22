@@ -23,6 +23,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       - api-gateway
 
