@@ -6,6 +6,63 @@ Yomu adalah platform aplikasi pembelajaran berbasis gamifikasi yang dirancang un
 
 ---
 
+## Running tests (all backend services)
+
+Each backend module is its own Gradle project (`./gradlew` inside that folder). There is no single root Gradle build for all services.
+
+**Prerequisites:** Java 21, network for Maven Central on first run.
+
+### 1. Publish `shared-lib` first (required)
+
+Services depend on `shared-lib` via local Maven (`~/.m2`). Run this after any change in `shared-lib`:
+
+```bash
+cd shared-lib
+./gradlew publishToMavenLocal --no-daemon
+```
+
+### 2. Run tests for all services (from repo root)
+
+```bash
+# Services with 80% JaCoCo coverage gate (instruction coverage on scoped code)
+for service in service-auth service-clan service-learning service-achievements service-forum; do
+  echo "=== ${service} ==="
+  (cd "${service}" && ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon) || exit 1
+done
+
+# Other backend modules (tests only, no 80% gate yet)
+for service in shared-lib api-gateway service-notification; do
+  echo "=== ${service} ==="
+  (cd "${service}" && ./gradlew test jacocoTestReport --no-daemon) || exit 1
+done
+```
+
+`service-notification` has no unit tests yet; `./gradlew test` should still succeed.
+
+### 3. Run tests for one service
+
+```bash
+cd shared-lib && ./gradlew publishToMavenLocal --no-daemon   # if not done yet
+cd service-forum   # example: auth, clan, learning, achievements, forum
+./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
+```
+
+Tests only (no coverage report):
+
+```bash
+cd service-clan && ./gradlew test --no-daemon
+```
+
+### 4. View coverage report (HTML)
+
+```bash
+open service-forum/build/reports/jacoco/test/html/index.html   # macOS
+```
+
+The five `service-*` modules above enforce **≥ 80% instruction coverage** on scoped production code (config, repositories, listeners, and application entrypoints are excluded). See [PLAN/TESTING.md](PLAN/TESTING.md) for conventions and details.
+
+---
+
 ## 🏗️ Arsitektur Sistem
 
 Yomu mengadopsi arsitektur microservices yang terdesentralisasi, di mana setiap layanan memiliki tanggung jawab tunggal (Single Responsibility) dan basis data sendiri.
