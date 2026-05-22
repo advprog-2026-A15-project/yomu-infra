@@ -2,43 +2,77 @@
 # Run: powershell -ExecutionPolicy Bypass -File .\seed-komentar.ps1
 
 $AUTH_URL = "http://localhost:8081/api/auth/login"
+$REGISTER_URL = "http://localhost:8081/api/auth/register"
 $BACAAN_URL = "http://localhost:8082/api/learning/bacaan"
 $FORUM_URL = "http://localhost:8084/api/forum/comments"
 
-Write-Host "Registering test user..." -ForegroundColor Cyan
-$registerPayload = @{
-    username = "testuser"
-    email = "testuser@example.com"
-    password = "password123"
-} | ConvertTo-Json
+$SEED_USERNAME = "seedkomentar"
+$SEED_EMAIL = "seed-komentar@yomu.local"
+$SEED_PASSWORD = "password123"
+$SEED_DISPLAY_NAME = "Seed Komentar User"
 
-try {
-    Invoke-WebRequest -Uri "http://localhost:8081/api/auth/register" -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($registerPayload)) -ContentType "application/json" -UseBasicParsing -TimeoutSec 15
-    Write-Host "Test user registered!" -ForegroundColor Green
-} catch {
-    Write-Host "Test user might already exist. Proceeding to login..." -ForegroundColor Yellow
+function Get-ErrorResponseBody($errorRecord) {
+    if ($null -eq $errorRecord.Exception.Response) {
+        return $errorRecord.Exception.Message
+    }
+
+    $stream = $errorRecord.Exception.Response.GetResponseStream()
+    if ($null -eq $stream) {
+        return $errorRecord.Exception.Message
+    }
+
+    $reader = New-Object System.IO.StreamReader($stream)
+    return $reader.ReadToEnd()
 }
 
-Write-Host "Logging in..." -ForegroundColor Cyan
-$loginPayload = @{
-    identifier = "testuser@example.com"
-    password = "password123"
+Write-Host "Registering test user..." -ForegroundColor Cyan
+$registerPayload = @{
+    username = $SEED_USERNAME
+    email = $SEED_EMAIL
+    displayName = $SEED_DISPLAY_NAME
+    password = $SEED_PASSWORD
 } | ConvertTo-Json
 
+$token = $null
+
 try {
-    $authResponse = Invoke-WebRequest -Uri $AUTH_URL -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($loginPayload)) -ContentType "application/json" -UseBasicParsing -TimeoutSec 15
-    $tokenInfo = $authResponse.Content | ConvertFrom-Json
+    $registerResponse = Invoke-WebRequest -Uri $REGISTER_URL -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($registerPayload)) -ContentType "application/json" -UseBasicParsing -TimeoutSec 15
+    $tokenInfo = $registerResponse.Content | ConvertFrom-Json
     $token = $tokenInfo.token
-    Write-Host "Login berhasil, token didapatkan!" -ForegroundColor Green
+    Write-Host "Test user registered!" -ForegroundColor Green
 } catch {
-    Write-Host "Gagal login. Pastikan Auth Service berjalan dan data user ada." -ForegroundColor Red
-    Write-Host "Status Code: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
-    
-    $stream = $_.Exception.Response.GetResponseStream()
-    $reader = New-Object System.IO.StreamReader($stream)
-    $responseBody = $reader.ReadToEnd()
-    Write-Host "Response Body: $responseBody" -ForegroundColor Red
-    exit 1
+    $responseBody = Get-ErrorResponseBody $_
+    if ($responseBody -match "sudah terdaftar") {
+        Write-Host "Test user already exists. Proceeding to login..." -ForegroundColor Yellow
+    } else {
+        Write-Host "Gagal register test user." -ForegroundColor Red
+        Write-Host "Status Code: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
+        Write-Host "Response Body: $responseBody" -ForegroundColor Red
+        exit 1
+    }
+}
+
+if ($null -eq $token) {
+    Write-Host "Logging in..." -ForegroundColor Cyan
+    $loginPayload = @{
+        identifier = $SEED_EMAIL
+        password = $SEED_PASSWORD
+    } | ConvertTo-Json
+
+    try {
+        $authResponse = Invoke-WebRequest -Uri $AUTH_URL -Method POST -Body ([System.Text.Encoding]::UTF8.GetBytes($loginPayload)) -ContentType "application/json" -UseBasicParsing -TimeoutSec 15
+        $tokenInfo = $authResponse.Content | ConvertFrom-Json
+        $token = $tokenInfo.token
+        Write-Host "Login berhasil, token didapatkan!" -ForegroundColor Green
+    } catch {
+        $responseBody = Get-ErrorResponseBody $_
+        Write-Host "Gagal login. Pastikan Auth Service berjalan dan password seed user belum diubah." -ForegroundColor Red
+        Write-Host "Status Code: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
+        Write-Host "Response Body: $responseBody" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "Token didapatkan dari register response!" -ForegroundColor Green
 }
 
 $headers = @{
