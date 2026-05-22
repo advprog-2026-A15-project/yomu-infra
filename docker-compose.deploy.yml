@@ -39,11 +39,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_MAIN_WEB_APPLICATION_TYPE=reactive
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
-    deploy:
-      resources:
-        limits:
-          memory: 384M
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
 
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
@@ -61,13 +57,9 @@ services:
       - YOMU_ADMIN_EMAILS=${YOMU_ADMIN_EMAILS:-christna.yosua@ui.ac.id,christian.yosua@ui.ac.id,tirta.rendy@ui.ac.id,nathanael.leander@ui.ac.id}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - auth-data:/data
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Learning Service ────────────────────────────────────────────
   service-learning:
@@ -81,13 +73,9 @@ services:
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
       - YOMU_SECURITY_BYPASS=true
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - learning-data:/data
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Achievements Service ────────────────────────────────────────
   service-achievements:
@@ -102,13 +90,9 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_LISTENER_SIMPLE_AUTO_STARTUP=true
       - SPRING_RABBITMQ_LISTENER_DIRECT_AUTO_STARTUP=true
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - achievements-data:/data
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Forum Service ───────────────────────────────────────────────
   service-forum:
@@ -121,13 +105,9 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - forum-data:/data
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Clan Service ────────────────────────────────────────────────
   service-clan:
@@ -141,13 +121,9 @@ services:
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
       - YOMU_SECURITY_BYPASS=true
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - clan-data:/data
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Notification Service ────────────────────────────────────────
   service-notification:
@@ -157,13 +133,9 @@ services:
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - YOMU_SECURITY_BYPASS=true
-      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
+      - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     depends_on:
       - rabbitmq
-    deploy:
-      resources:
-        limits:
-          memory: 384M
 
   # ─── Monitoring ──────────────────────────────────────────────────
   prometheus:
