@@ -218,9 +218,9 @@ Menggunakan **RabbitMQ** dengan pola **Publish-Subscribe (Topic Exchange)**:
 
 ## 📦 Panduan Menjalankan Proyek
 
-### 🐳 Menggunakan Docker Compose (Direkomendasikan)
+### 🐳 Menggunakan Docker Compose (Lingkungan Development)
 
-Cara tercepat untuk menjalankan seluruh ekosistem Yomu:
+Cara tercepat untuk menjalankan seluruh ekosistem Yomu di komputer lokal:
 
 1. Pastikan semua repositori microservice berada dalam satu folder root.
 2. Jalankan perintah:
@@ -231,6 +231,51 @@ Cara tercepat untuk menjalankan seluruh ekosistem Yomu:
     - **Frontend**: `http://localhost:5173`
     - **API Gateway**: `http://localhost:8090`
     - **RabbitMQ Dashboard**: `http://localhost:15672` (guest/guest)
+
+### 🚀 Panduan Deployment ke Server (EC2) dari Awal
+
+Jika Anda ingin melakukan deployment atau memindahkan proyek ke server AWS EC2 dari awal secara bersih (*clean build*), ikuti langkah-langkah berikut:
+
+**1. Siapkan Kredensial di `.env` lokal**
+Pastikan file `.env` sudah diisi dengan kredensial Google OAuth yang valid.
+```env
+GOOGLE_CLIENT_ID=client_id_anda
+GOOGLE_CLIENT_SECRET=secret_anda
+```
+
+**2. Kompres Proyek Lokal**
+Abaikan folder besar yang tidak diperlukan agar proses upload lebih cepat.
+```bash
+tar --exclude=node_modules --exclude=.git --exclude=.gradle --exclude=build --exclude=out --exclude=.idea --exclude=bin --exclude=frontend/dist -czvf yomu-app.tar.gz .
+```
+
+**3. Transfer ke Server (via SCP)**
+Kirimkan file ke EC2 menggunakan SSH Key Anda.
+```bash
+scp -i path/to/key.pem yomu-app.tar.gz ubuntu@<IP_EC2>:~
+```
+
+**4. Masuk ke Server & Ekstrak**
+```bash
+ssh -i path/to/key.pem ubuntu@<IP_EC2>
+mkdir -p yomu-app && cd yomu-app
+tar -xzvf ../yomu-app.tar.gz
+```
+
+**5. Rebuild & Jalankan (Tanpa Cache)**
+Agar kode terbaru benar-benar dikompilasi ulang dari nol:
+```bash
+# Hapus kontainer lama & bersihkan sistem Docker (Opsional)
+docker compose -f docker-compose.deploy.yml down
+docker system prune -a -f
+
+# Build ulang secara bersih (Clean Build)
+docker compose -f docker-compose.deploy.yml build --no-cache
+
+# Jalankan semua layanan di latar belakang
+docker compose -f docker-compose.deploy.yml up -d
+```
+Aplikasi kini dapat diakses melalui IP publik server pada port 80 (Frontend).
 
 ### 🛠️ Menjalankan Secara Manual
 
