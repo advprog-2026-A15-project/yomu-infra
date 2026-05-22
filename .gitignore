@@ -44,3 +44,7 @@ setup-security.py
 
 # Specific ignored directories
 /module/
+# Test & Profile
+*.jfr
+scratch_*
+load_test.py

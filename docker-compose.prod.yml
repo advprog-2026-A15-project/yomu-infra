@@ -1,0 +1,156 @@
+services:
+  # ─── RabbitMQ ──────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  # ─── API Gateway ──────────────────────────────────────────────────
+  api-gateway:
+    image: ghcr.io/advprog-2026-a15-project/api-gateway:latest
+    ports:
+      - "8090:8090"
+    depends_on:
+      - rabbitmq
+      - service-auth
+      - service-learning
+      - service-achievements
+      - service-forum
+      - service-clan
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_WEB_APPLICATION_TYPE=reactive
+
+  # ─── Auth Service ─────────────────────────────────────────────────
+  service-auth:
+    image: ghcr.io/advprog-2026-a15-project/service-auth:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_auth;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
+      - YOMU_SECURITY_BYPASS=true
+      - YOMU_ADMIN_EMAILS=${YOMU_ADMIN_EMAILS:-christna.yosua@ui.ac.id,christian.yosua@ui.ac.id,tirta.rendy@ui.ac.id,nathanael.leander@ui.ac.id}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - auth-data:/data
+
+  # ─── Learning Service ────────────────────────────────────────────
+  service-learning:
+    image: ghcr.io/advprog-2026-a15-project/service-learning:latest
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_learning;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+    volumes:
+      - learning-data:/data
+
+  # ─── Achievements Service ────────────────────────────────────────
+  service-achievements:
+    image: ghcr.io/advprog-2026-a15-project/service-achievements:latest
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_achievements;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_LISTENER_SIMPLE_AUTO_STARTUP=true
+      - SPRING_RABBITMQ_LISTENER_DIRECT_AUTO_STARTUP=true
+    volumes:
+      - achievements-data:/data
+
+  # ─── Forum Service ───────────────────────────────────────────────
+  service-forum:
+    image: ghcr.io/advprog-2026-a15-project/service-forum:latest
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_forum;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    volumes:
+      - forum-data:/data
+
+  # ─── Clan Service ────────────────────────────────────────────────
+  service-clan:
+    image: ghcr.io/advprog-2026-a15-project/service-clan:latest
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_clan;MODE=PostgreSQL;AUTO_SERVER=TRUE
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+    volumes:
+      - clan-data:/data
+
+  # ─── Notification Service ────────────────────────────────────────
+  service-notification:
+    image: ghcr.io/advprog-2026-a15-project/service-notification:latest
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - YOMU_SECURITY_BYPASS=true
+    depends_on:
+      - rabbitmq
+
+  # ─── Monitoring ──────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api-gateway
+      - service-auth
+      - service-learning
+      - service-achievements
+      - service-clan
+      - service-forum
+      - service-notification
+      - rabbitmq
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+
+volumes:
+  auth-data:
+  learning-data:
+  achievements-data:
+  forum-data:
+  clan-data:
