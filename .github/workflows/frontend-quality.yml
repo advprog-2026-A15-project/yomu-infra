@@ -3,34 +3,34 @@ name: Frontend Quality
 on:
   pull_request:
     paths:
+      - "frontend"
       - "frontend/**"
-      - "clone-repositories.sh"
+      - ".gitmodules"
       - ".github/workflows/frontend-quality.yml"
   push:
     branches:
       - main
       - staging
     paths:
+      - "frontend"
       - "frontend/**"
-      - "clone-repositories.sh"
+      - ".gitmodules"
       - ".github/workflows/frontend-quality.yml"
   workflow_dispatch:
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: frontend
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Clone frontend repository when running from infra repo
-        working-directory: .
-        run: |
-          chmod +x ./clone-repositories.sh
-          ./clone-repositories.sh
+        with:
+          submodules: recursive
 
       - uses: actions/setup-node@v4
         with:

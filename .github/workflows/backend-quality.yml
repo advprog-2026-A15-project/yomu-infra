@@ -3,31 +3,45 @@ name: Backend Quality
 on:
   pull_request:
     paths:
+      - "api-gateway"
       - "api-gateway/**"
+      - "service-*"
       - "service-*/**"
+      - "shared-lib"
       - "shared-lib/**"
       - "docker-compose.yml"
-      - "clone-repositories.sh"
+      - "docker-compose.deploy.yml"
+      - "docker-compose.prod.yml"
+      - ".gitmodules"
       - ".github/workflows/backend-quality.yml"
   push:
     branches:
       - main
       - staging
     paths:
+      - "api-gateway"
       - "api-gateway/**"
+      - "service-*"
       - "service-*/**"
+      - "shared-lib"
       - "shared-lib/**"
       - "docker-compose.yml"
-      - "clone-repositories.sh"
+      - "docker-compose.deploy.yml"
+      - "docker-compose.prod.yml"
+      - ".gitmodules"
       - ".github/workflows/backend-quality.yml"
   workflow_dispatch:
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
@@ -36,18 +50,31 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Clone service repositories when running from infra repo
+      - name: Validate Docker Compose files
         run: |
-          chmod +x ./clone-repositories.sh
-          ./clone-repositories.sh
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.deploy.yml config --quiet
+          docker compose -f docker-compose.prod.yml config --quiet
 
       - name: Publish shared library locally
         working-directory: shared-lib
-        run: ./gradlew publishToMavenLocal --no-daemon
+        run: |
+          chmod +x ./gradlew
+          ./gradlew publishToMavenLocal --no-daemon
 
       - name: Build backend services
         run: |
-          for service in api-gateway service-auth service-learning service-achievements service-forum service-clan; do
+          services=(
+            api-gateway
+            service-auth
+            service-learning
+            service-achievements
+            service-forum
+            service-clan
+            service-notification
+          )
+
+          for service in "${services[@]}"; do
             echo "Building ${service}"
-            (cd "${service}" && ./gradlew build --no-daemon)
+            (cd "${service}" && chmod +x ./gradlew && ./gradlew build jacocoTestReport --no-daemon)
           done
