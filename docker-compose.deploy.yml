@@ -156,7 +156,6 @@ services:
       dockerfile: ./service-notification/Dockerfile
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - YOMU_SECURITY_BYPASS=true
       - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=128m
     depends_on:
       - rabbitmq

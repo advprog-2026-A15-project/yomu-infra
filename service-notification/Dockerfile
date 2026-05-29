@@ -3,7 +3,7 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 COPY shared-lib ./shared-lib
-COPY service-learning ./service-learning
+COPY service-notification ./service-notification
 
 ARG CLEAN_GRADLE_CACHE=0
 
@@ -15,13 +15,13 @@ RUN --mount=type=cache,target=/root/.gradle,sharing=locked if [ "$CLEAN_GRADLE_C
     ./gradlew publishToMavenLocal --no-daemon
 
 # Build service
-RUN --mount=type=cache,target=/root/.gradle,sharing=locked cd ./service-learning && \
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked cd ./service-notification && \
     sed -i 's/\r$//' ./gradlew && \
     chmod +x ./gradlew && \
     ./gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=build /app/service-learning/build/libs/*.jar app.jar
-EXPOSE 8082
+COPY --from=build /app/service-notification/build/libs/*.jar app.jar
+EXPOSE 8086
 ENTRYPOINT ["java", "-jar", "app.jar"]
