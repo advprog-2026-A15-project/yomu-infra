@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.yomu.notification.controller;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -8,6 +9,9 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockConstruction;
 
 class NotificationControllerTest {
 
@@ -33,6 +37,21 @@ class NotificationControllerTest {
 
         assertThat(active.sendCount).isEqualTo(1);
         assertThat(emitters(controller)).containsExactly(active);
+    }
+
+    @Test
+    void streamNotifications_removesEmitterWhenInitialSendFails() {
+        try (MockedConstruction<SseEmitter> ignored = mockConstruction(
+                SseEmitter.class,
+                (mock, context) -> doThrow(new IOException("disconnected"))
+                        .when(mock).send(any(SseEmitter.SseEventBuilder.class)))) {
+            NotificationController controller = new NotificationController();
+
+            SseEmitter emitter = controller.streamNotifications();
+
+            assertThat(emitter).isNotNull();
+            assertThat(emitters(controller)).isEmpty();
+        }
     }
 
     @SuppressWarnings("unchecked")

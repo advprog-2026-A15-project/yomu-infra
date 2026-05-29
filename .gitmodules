@@ -1,0 +1,24 @@
+[submodule "api-gateway"]
+	path = api-gateway
+	url = https://github.com/advprog-2026-A15-project/yomu-api-gateway.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/advprog-2026-A15-project/yomu-frontend.git
+[submodule "service-achievements"]
+	path = service-achievements
+	url = https://github.com/advprog-2026-A15-project/yomu-service-achievements.git
+[submodule "service-auth"]
+	path = service-auth
+	url = https://github.com/advprog-2026-A15-project/yomu-service-auth.git
+[submodule "service-clan"]
+	path = service-clan
+	url = https://github.com/advprog-2026-A15-project/yomu-service-clan.git
+[submodule "service-forum"]
+	path = service-forum
+	url = https://github.com/advprog-2026-A15-project/yomu-service-forum.git
+[submodule "service-learning"]
+	path = service-learning
+	url = https://github.com/advprog-2026-A15-project/yomu-service-learning.git
+[submodule "shared-lib"]
+	path = shared-lib
+	url = https://github.com/advprog-2026-A15-project/yomu-shared-lib.git
