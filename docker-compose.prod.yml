@@ -1,4 +1,14 @@
 services:
+  # ─── DuckDNS ───────────────────────────────────────────────────────
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    environment:
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - UPDATE_IP=both
+    restart: unless-stopped
+
   # ─── RabbitMQ ──────────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:4.0-management
