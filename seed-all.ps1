@@ -23,7 +23,7 @@ foreach ($script in $scripts) {
                 Write-Host ">>> Warning: $script finished with exit code $LASTEXITCODE" -ForegroundColor Red
             }
         } catch {
-            Write-Host ">>> Error executing $script: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host ">>> Error executing ${script}: $($_.Exception.Message)" -ForegroundColor Red
             exit 1
         }
     } else {
