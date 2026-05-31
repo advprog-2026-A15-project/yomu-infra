@@ -115,6 +115,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=sa
       - SPRING_DATASOURCE_PASSWORD=
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - AUTH_GRPC_ADDRESS=static://service-auth:9091
       - JAVA_TOOL_OPTIONS=-Xmx512m -XX:MaxMetaspaceSize=128m
     volumes:
       - forum-data:/data
