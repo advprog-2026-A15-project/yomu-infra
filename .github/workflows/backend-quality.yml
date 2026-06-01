@@ -59,6 +59,7 @@ jobs:
       - name: Publish shared library locally
         working-directory: shared-lib
         run: |
+          sed -i 's/\r$//' ./gradlew
           chmod +x ./gradlew
           ./gradlew publishToMavenLocal --no-daemon
 
@@ -76,5 +77,5 @@ jobs:
 
           for service in "${services[@]}"; do
             echo "Building ${service}"
-            (cd "${service}" && chmod +x ./gradlew && ./gradlew build jacocoTestReport --no-daemon)
+            (cd "${service}" && sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew && ./gradlew build jacocoTestReport --no-daemon)
           done
