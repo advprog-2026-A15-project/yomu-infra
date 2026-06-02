@@ -131,16 +131,7 @@ services:
     volumes:
       - clan-data:/data
 
-  # ─── Notification Service ────────────────────────────────────────
-  service-notification:
-    image: ghcr.io/advprog-2026-a15-project/service-notification:main
-    ports:
-      - "8086:8086"
-    environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - YOMU_SECURITY_BYPASS=true
-    depends_on:
-      - rabbitmq
+
 
   # ─── Monitoring ──────────────────────────────────────────────────
   prometheus:
@@ -157,7 +148,6 @@ services:
       - service-achievements
       - service-clan
       - service-forum
-      - service-notification
       - rabbitmq
 
   grafana:
