@@ -21,7 +21,7 @@ services:
 
   # ─── Reverse Proxy (Nginx) ──────────────────────────────────────────
   nginx-proxy:
-    image: ghcr.io/advprog-2026-a15-project/yomu-nginx:latest
+    image: ghcr.io/advprog-2026-a15-project/yomu-nginx:main
     ports:
       - "80:80"
     depends_on:
@@ -30,13 +30,13 @@ services:
 
   # ─── Frontend ──────────────────────────────────────────────────────
   frontend:
-    image: ghcr.io/advprog-2026-a15-project/yomu-frontend:latest
+    image: ghcr.io/advprog-2026-a15-project/yomu-frontend:main
     depends_on:
       - api-gateway
 
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
-    image: ghcr.io/advprog-2026-a15-project/api-gateway:latest
+    image: ghcr.io/advprog-2026-a15-project/api-gateway:main
     ports:
       - "8090:8090"
     depends_on:
@@ -53,7 +53,7 @@ services:
 
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
-    image: ghcr.io/advprog-2026-a15-project/service-auth:latest
+    image: ghcr.io/advprog-2026-a15-project/service-auth:main
     ports:
       - "8081:8081"
     environment:
@@ -72,7 +72,7 @@ services:
 
   # ─── Learning Service ────────────────────────────────────────────
   service-learning:
-    image: ghcr.io/advprog-2026-a15-project/service-learning:latest
+    image: ghcr.io/advprog-2026-a15-project/service-learning:main
     ports:
       - "8082:8082"
     environment:
@@ -87,7 +87,7 @@ services:
 
   # ─── Achievements Service ────────────────────────────────────────
   service-achievements:
-    image: ghcr.io/advprog-2026-a15-project/service-achievements:latest
+    image: ghcr.io/advprog-2026-a15-project/service-achievements:main
     ports:
       - "8083:8083"
     environment:
@@ -103,7 +103,7 @@ services:
 
   # ─── Forum Service ───────────────────────────────────────────────
   service-forum:
-    image: ghcr.io/advprog-2026-a15-project/service-forum:latest
+    image: ghcr.io/advprog-2026-a15-project/service-forum:main
     ports:
       - "8084:8084"
     environment:
@@ -118,7 +118,7 @@ services:
 
   # ─── Clan Service ────────────────────────────────────────────────
   service-clan:
-    image: ghcr.io/advprog-2026-a15-project/service-clan:latest
+    image: ghcr.io/advprog-2026-a15-project/service-clan:main
     ports:
       - "8085:8085"
     environment:
@@ -133,7 +133,7 @@ services:
 
   # ─── Notification Service ────────────────────────────────────────
   service-notification:
-    image: ghcr.io/advprog-2026-a15-project/service-notification:latest
+    image: ghcr.io/advprog-2026-a15-project/service-notification:main
     ports:
       - "8086:8086"
     environment:
