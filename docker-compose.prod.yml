@@ -19,6 +19,21 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
 
+  # ─── Reverse Proxy (Nginx) ──────────────────────────────────────────
+  nginx-proxy:
+    image: ghcr.io/advprog-2026-a15-project/yomu-nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - api-gateway
+
+  # ─── Frontend ──────────────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/advprog-2026-a15-project/yomu-frontend:latest
+    depends_on:
+      - api-gateway
+
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
     image: ghcr.io/advprog-2026-a15-project/api-gateway:latest
