@@ -29,7 +29,12 @@ set "REPO_NAME=%~2"
 
 echo.
 echo Pulling %REPO_NAME%...
-git -C "%REPO_PATH%" pull
+git -C "%REPO_PATH%" checkout main >nul 2>&1
+if errorlevel 1 (
+    echo Failed to checkout main for %REPO_NAME%.
+    exit /b 1
+)
+git -C "%REPO_PATH%" pull origin main
 if errorlevel 1 (
     echo Failed to pull %REPO_NAME%.
     exit /b 1

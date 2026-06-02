@@ -11,8 +11,8 @@ pull_repo() {
     echo ""
     echo "Pulling ${repo_name}..."
     
-    # Menjalankan git pull langsung dengan pengecekan kondisi sukses/gagal
-    if git -C "${repo_path}" pull; then
+    # Checkout main first, then pull from origin main
+    if git -C "${repo_path}" checkout main && git -C "${repo_path}" pull origin main; then
         return 0
     else
         echo "Failed to pull ${repo_name}."
