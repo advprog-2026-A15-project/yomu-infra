@@ -77,5 +77,8 @@ jobs:
 
           for service in "${services[@]}"; do
             echo "Building ${service}"
-            (cd "${service}" && sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew && ./gradlew build jacocoTestReport --no-daemon)
+            (cd "${service}" && sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew && ./gradlew build jacocoTestReport jacocoTestCoverageVerification --no-daemon)
+            
+            echo "Coverage for ${service}:"
+            awk -F"," '{ instructions += $4 + $5; covered += $5 } END { print int(100*covered/instructions) "%" }' "${service}/build/reports/jacoco/test/jacocoTestReport.csv" || echo "Coverage report not found"
           done
