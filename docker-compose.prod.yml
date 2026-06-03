@@ -31,14 +31,36 @@ services:
   # ─── Frontend ──────────────────────────────────────────────────────
   frontend:
     image: ghcr.io/advprog-2026-a15-project/yomu-frontend:main
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     depends_on:
       - api-gateway
 
   # ─── API Gateway ──────────────────────────────────────────────────
   api-gateway:
     image: ghcr.io/advprog-2026-a15-project/api-gateway:main
-    ports:
-      - "8090:8090"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     depends_on:
       - rabbitmq
       - service-auth
@@ -54,8 +76,18 @@ services:
   # ─── Auth Service ─────────────────────────────────────────────────
   service-auth:
     image: ghcr.io/advprog-2026-a15-project/service-auth:main
-    ports:
-      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_auth;MODE=PostgreSQL;AUTO_SERVER=TRUE
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
@@ -73,8 +105,18 @@ services:
   # ─── Learning Service ────────────────────────────────────────────
   service-learning:
     image: ghcr.io/advprog-2026-a15-project/service-learning:main
-    ports:
-      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_learning;MODE=PostgreSQL;AUTO_SERVER=TRUE
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
@@ -88,8 +130,18 @@ services:
   # ─── Achievements Service ────────────────────────────────────────
   service-achievements:
     image: ghcr.io/advprog-2026-a15-project/service-achievements:main
-    ports:
-      - "8083:8083"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_achievements;MODE=PostgreSQL;AUTO_SERVER=TRUE
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
@@ -104,8 +156,18 @@ services:
   # ─── Forum Service ───────────────────────────────────────────────
   service-forum:
     image: ghcr.io/advprog-2026-a15-project/service-forum:main
-    ports:
-      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_forum;MODE=PostgreSQL;AUTO_SERVER=TRUE
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
@@ -119,8 +181,18 @@ services:
   # ─── Clan Service ────────────────────────────────────────────────
   service-clan:
     image: ghcr.io/advprog-2026-a15-project/service-clan:main
-    ports:
-      - "8085:8085"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      update_config:
+        order: start-first
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/yomu_clan;MODE=PostgreSQL;AUTO_SERVER=TRUE
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
