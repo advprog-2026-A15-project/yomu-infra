@@ -50,3 +50,18 @@ scratch_*
 load_test.py
 *.tar
 *.tar.gz
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Other logs & cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+__pycache__/
+.pytest_cache/
+target/
+.settings/
+.vscode/
+.idea/
