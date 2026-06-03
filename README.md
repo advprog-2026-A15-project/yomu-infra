@@ -2227,5 +2227,31 @@ classDiagram
 
 ---
 
+### 📊 System Performance & Quality Metrics
+
+Berikut adalah ringkasan hasil pengukuran kinerja (*profiling*) untuk sistem *backend* dan hasil audit performa UI *frontend*.
+
+#### Backend Apdex Score
+
+Berdasarkan *profiling evidence* (dengan batas waktu tunggu request `T = 500 ms`), skor rata-rata untuk backend services adalah:
+
+- **Apdex Score**: **0.9996** (`99.96%` - *Excellent*)
+- Total Requests (*Sample*): 1113
+- Satisfied (`<= 500 ms`): 1112
+- Tolerating (`> 500 ms and <= 2 s`): 1
+
+*(Catatan: Rincian perhitungan lengkap tersedia pada berkas [project-apdex.md](docs/project-apdex.md))*
+
+#### Frontend Lighthouse Audit
+
+Berdasarkan audit Google Lighthouse pada aplikasi web *frontend* berjalan (`React + Vite`), metrik berikut dicapai:
+
+- ⚡ **Performance**: **98 / 100**
+- ♿ **Accessibility**: **79 / 100**
+- 💡 **Best Practices**: **96 / 100**
+- 🔍 **SEO**: **82 / 100**
+
+---
+
 _Dibuat dengan ❤️ oleh Tim Yomu — Kelompok A15, Advanced Programming 2026_
 _Referensi utama: Module 09 — Software Architectures (Ade Azurat, Fasilkom UI)_
