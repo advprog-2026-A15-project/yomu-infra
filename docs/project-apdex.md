@@ -22,13 +22,14 @@ Apdex = (satisfied + (tolerating / 2)) / total
 | `service-learning` | HTTP metrics snapshot | 32 | 31 | 1 | 0 | 0.9844 |
 | `service-clan` | HTTP metrics snapshot | 277 | 277 | 0 | 0 | 1.0000 |
 | `service-achievements` | Action timer snapshot | 454 | 454 | 0 | 0 | 1.0000 |
-| **Overall profiled backend** | Combined available evidence | **1113** | **1112** | **1** | **0** | **0.9996** |
+| `service-forum` | Action timer snapshot | 60 | 60 | 0 | 0 | 1.0000 |
+| **Overall profiled backend** | Combined available evidence | **1173** | **1172** | **1** | **0** | **0.9996** |
 
 Project calculation:
 
 ```text
-Apdex = (1112 + (1 / 2)) / 1113
-      = 1112.5 / 1113
+Apdex = (1172 + (1 / 2)) / 1173
+      = 1172.5 / 1173
       = 0.9996
 ```
 
@@ -49,15 +50,23 @@ Apdex = (1112 + (1 / 2)) / 1113
 - `service-achievements`: the action timer snapshot records `454` API action
   samples, and all recorded action durations are below `500 ms`, so all samples
   are satisfied.
+- `service-forum`: the action timer snapshot records `60` API action samples
+  across 6 action types (list, tree, create, update, delete, react). The slowest
+  recorded action max is `52.83 ms` (create with reply, includes validateParentComment
+  + JDBC insert + RabbitMQ publish). All samples are satisfied. The list and tree
+  actions include gRPC calls to `service-auth` for author profile resolution
+  per unique userId; latency is dominated by this gRPC overhead on cold start
+  (first request), with persistent channel reuse keeping subsequent requests fast.
+  Evidence: `service-forum/docs/profiling/prometheus-metrics-snapshot.txt` and
+  `service-forum/docs/profiling/forum-runtime.jfr`.
 
 ## Scope And Limits
 
-This is the Apdex score for the backend services that currently have profiling
-evidence in the repository: `service-auth`, `service-learning`, `service-clan`,
-and `service-achievements`.
+This is the Apdex score for the backend services that have profiling evidence in
+the repository: `service-auth`, `service-learning`, `service-clan`,
+`service-achievements`, and `service-forum`.
 
-The score does not include `frontend`, `api-gateway`, `service-forum`, or
-`service-notification`, because this repository does not currently include
-comparable profiling latency snapshots for those components. A true production
-or staging project Apdex should be calculated from gateway-level request
-histograms across all user-facing routes.
+The score does not include `frontend`, `api-gateway`, or `service-notification`,
+because this repository does not currently include comparable profiling latency
+snapshots for those components. A true production or staging project Apdex should
+be calculated from gateway-level request histograms across all user-facing routes.
