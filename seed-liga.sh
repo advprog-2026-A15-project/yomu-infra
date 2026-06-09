@@ -117,6 +117,7 @@ for name in "${CLAN_NAMES[@]}"; do
 
     if status="$(
         curl -sS -X POST "$BASE_URL" \
+            -H "Authorization: Bearer $AUTH_TOKEN" \
             -H "Content-Type: application/json" \
             --data-binary "$body" \
             -o "$response_file" \
@@ -131,7 +132,7 @@ for name in "${CLAN_NAMES[@]}"; do
     rm -f "$response_file"
 done
 
-if status="$(curl -sS -X GET "$BASE_URL/leaderboard" -o "$clans_file" -w "%{http_code}")"; then
+if status="$(curl -sS -X GET "$BASE_URL/leaderboard" -H "Authorization: Bearer $AUTH_TOKEN" -o "$clans_file" -w "%{http_code}")"; then
     if [[ "$status" == 2* ]]; then
         "$PYTHON_BIN" - "$clans_file" <<'PY' > "$rows_file"
 import json
@@ -155,6 +156,7 @@ PY
 
             if status="$(
                 curl -sS -X POST "$BASE_URL/$clan_id/admin/add-score?score=$score" \
+                    -H "Authorization: Bearer $AUTH_TOKEN" \
                     -o "$response_file" \
                     -w "%{http_code}"
             )"; then
@@ -180,7 +182,7 @@ echo
 echo "=== Simulating Seasons (Promotions/Demotions) ==="
 for i in 1 2 3 4; do
     response_file="$(mktemp)"
-    if status="$(curl -sS -X POST "$BASE_URL/admin/end-season" -o "$response_file" -w "%{http_code}")"; then
+    if status="$(curl -sS -X POST "$BASE_URL/admin/end-season" -H "Authorization: Bearer $AUTH_TOKEN" -o "$response_file" -w "%{http_code}")"; then
         if [[ "$status" == 2* ]]; then
             echo "[OK] Season $i ended."
             sleep 1

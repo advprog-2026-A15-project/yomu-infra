@@ -6,6 +6,55 @@ Yomu adalah platform aplikasi pembelajaran berbasis gamifikasi yang dirancang un
 
 ---
 
+## ⚡ Quick Start (Cara Menjalankan)
+
+### 💻 1. Local Development (Di Laptop Anda)
+Pastikan aplikasi **Docker Desktop** Anda sudah menyala, lalu jalankan command berikut di root folder:
+```bash
+docker compose up --build -d
+```
+Atau jika Anda ingin menjalankan Frontend-nya saja secara manual:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### ☁️ 2. Deployment EC2 (Server AWS)
+Jika Anda sudah berada di dalam server AWS EC2 (misalnya menggunakan `t3.micro`), jalankan perintah berikut (pastikan menggunakan file yml khusus deploy):
+```bash
+docker compose -f docker-compose.deploy.yml up --build -d
+```
+*(Catatan: Jangan lupa membuat Swap 2GB seperti yang dibahas sebelumnya jika RAM server hanya 1GB).*
+
+### 📊 3. Seeding Data (Untuk Keperluan Profiling)
+Untuk melakukan *stress test* atau menunjukkan hasil *profiling* performa sistem, Anda bisa menyuntikkan (seeding) data *dummy* dalam jumlah besar secara otomatis menggunakan skrip yang sudah disediakan di folder root.
+
+- **Bagi pengguna Windows (PowerShell):**
+  ```powershell
+  .\seed-all.ps1
+  ```
+- **Bagi pengguna Linux / Mac / WSL / EC2:**
+  ```bash
+  chmod +x *.sh
+  ./seed-all.sh
+  ```
+*(Catatan: Anda juga bisa menjalankan skrip spesifik seperti `.\seed-komentar.ps1`, `.\seed-liga.ps1`, dsb sesuai dengan modul yang ingin di-*profile*).*
+
+### 🧹 4. Maintenance EC2 (Docker Pruning)
+Setiap kali Anda men-deploy atau mem-build ulang proyek di server (seperti EC2), Docker akan menyisakan sampah (image lama) yang lama-kelamaan akan membuat *storage* (disk) penuh dan server *crash*.
+
+Lakukan pembersihan ini secara berkala di dalam EC2 Anda:
+```bash
+# Cek sisa disk space Anda
+df -h
+
+# Bersihkan image/cache Docker lama yang menumpuk
+docker system prune -a
+```
+
+---
+
 ## Running tests (all backend services)
 
 Each backend module is its own Gradle project (`./gradlew` inside that folder). There is no single root Gradle build for all services.

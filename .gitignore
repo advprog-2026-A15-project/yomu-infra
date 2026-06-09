@@ -36,6 +36,8 @@ data/
 .vscode/
 .idea/
 .claude/
+individual review/
+images/
 
 # Scripts
 setup-profiling.ps1

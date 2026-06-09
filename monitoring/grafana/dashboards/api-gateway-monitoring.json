@@ -57,10 +57,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(jvm_login_total[5m])) by (outcome, provider)",
+          "expr": "sum(rate(http_server_requests_seconds_count{instance=\"api-gateway:8090\"}[5m])) by (status)",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{outcome}} ({{provider}})",
+          "legendFormat": "Status {{status}}",
           "refId": "A"
         }
       ],
@@ -68,7 +68,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Login Rate (5m)",
+      "title": "Total Requests Rate (5m)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -103,11 +103,7 @@
           "min": null,
           "show": true
         }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      ]
     },
     {
       "aliasColors": {},
@@ -141,13 +137,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(jvm_register_total[5m])) by (outcome)",
+          "expr": "sum(rate(http_server_requests_seconds_sum{instance=\"api-gateway:8090\"}[5m])) / sum(rate(http_server_requests_seconds_count{instance=\"api-gateway:8090\"}[5m])) * 1000",
           "format": "time_series",
-          "legendFormat": "{{outcome}}",
+          "legendFormat": "Latency (ms)",
           "refId": "A"
         }
       ],
-      "title": "Registration Rate (5m)",
+      "title": "Average Response Time (ms)",
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -155,7 +151,7 @@
       },
       "yaxes": [
         {
-          "format": "short",
+          "format": "ms",
           "show": true
         },
         {
@@ -196,13 +192,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(jvm_rate_limit_hits_total[1h])",
+          "expr": "sum(rate(http_server_requests_seconds_count{instance=\"api-gateway:8090\", status=~\"5..\"}[5m]))",
           "format": "time_series",
-          "legendFormat": "Blocked Requests",
+          "legendFormat": "Errors",
           "refId": "A"
         }
       ],
-      "title": "Rate Limit Hits (1h)",
+      "title": "5xx Error Rate (5m)",
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -251,13 +247,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(jvm_password_hashing_duration_seconds_sum[5m]) / rate(jvm_password_hashing_duration_seconds_count[5m])",
+          "expr": "jvm_memory_used_bytes{instance=\"api-gateway:8090\", area=\"heap\"} / 1024 / 1024",
           "format": "time_series",
-          "legendFormat": "Avg Duration",
+          "legendFormat": "Heap Memory",
           "refId": "A"
         }
       ],
-      "title": "Avg Password Hashing Duration",
+      "title": "JVM Heap Memory Used (MB)",
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -265,7 +261,7 @@
       },
       "yaxes": [
         {
-          "format": "s",
+          "format": "decbytes",
           "show": true
         },
         {

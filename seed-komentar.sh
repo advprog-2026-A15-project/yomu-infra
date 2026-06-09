@@ -142,7 +142,7 @@ else
 fi
 
 echo "Fetching existing bacaan..."
-if ! status="$(curl -sS -X GET "$BACAAN_URL" --max-time 15 -o "$bacaan_file" -w "%{http_code}")"; then
+if ! status="$(curl -sS -X GET "$BACAAN_URL" -H "Authorization: Bearer $token" --max-time 15 -o "$bacaan_file" -w "%{http_code}")"; then
     echo "Gagal mengambil daftar bacaan: curl request failed" >&2
     exit 1
 fi
